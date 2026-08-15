@@ -3,7 +3,7 @@ import { Scene, PrimitiveType } from '@scene/Scene';
 import { Vec3, Color } from '@math/Vec';
 import type { Material } from '@renderer/Material';
 
-export type PanelId = 'hierarchy' | 'inspector' | 'viewport' | 'console' | 'assets';
+export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
 export interface EditorState {
   scene: Scene;
@@ -15,6 +15,8 @@ export interface EditorState {
   panelSizes: Record<string, number>;
   isPlaying: boolean;
   consoleMessages: { level: 'info' | 'warn' | 'error'; text: string; time: number }[];
+  gizmoMode: GizmoMode;
+  frameSelectedTrigger: number;
 
   addPrimitive: (type: PrimitiveType, parentId?: number | null) => void;
   selectNode: (id: number | null) => void;
@@ -28,6 +30,8 @@ export interface EditorState {
   togglePlay: () => void;
   log: (level: 'info' | 'warn' | 'error', text: string) => void;
   clearConsole: () => void;
+  setGizmoMode: (mode: GizmoMode) => void;
+  frameSelected: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -40,6 +44,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   panelSizes: { hierarchy: 250, inspector: 300, console: 200 },
   isPlaying: false,
   consoleMessages: [],
+  gizmoMode: 'translate' as GizmoMode,
+  frameSelectedTrigger: 0,
 
   addPrimitive: (type, parentId) => {
     const state = get();
@@ -110,4 +116,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })),
 
   clearConsole: () => set({ consoleMessages: [] }),
+
+  setGizmoMode: (mode) => set({ gizmoMode: mode }),
+
+  frameSelected: () =>
+    set((s) => ({ frameSelectedTrigger: s.frameSelectedTrigger + 1 })),
 }));

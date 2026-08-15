@@ -10,6 +10,8 @@ import {
   GRID_FRAGMENT_SHADER,
   LINE_VERTEX_SHADER,
   LINE_FRAGMENT_SHADER,
+  WIREFRAME_VERTEX_SHADER,
+  WIREFRAME_FRAGMENT_SHADER,
 } from './Shaders';
 
 interface GLMesh {
@@ -45,6 +47,7 @@ export class Renderer {
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
   public showGrid: boolean = true;
   public selectedNodeId: number | null = null;
+  public wireframeShader: WebGLProgram | null = null;
 
   private materials: Map<number, Material> = new Map();
 
@@ -69,6 +72,7 @@ export class Renderer {
     this.shaderProgram = this.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
     this.gridProgram = this.createProgram(GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER);
     this.lineProgram = this.createProgram(LINE_VERTEX_SHADER, LINE_FRAGMENT_SHADER);
+    this.wireframeShader = this.createProgram(WIREFRAME_VERTEX_SHADER, WIREFRAME_FRAGMENT_SHADER);
   }
 
   private createProgram(vsSource: string, fsSource: string): WebGLProgram | null {
@@ -271,6 +275,37 @@ export class Renderer {
 
       gl.bindVertexArray(null);
     }
+
+    if (this.selectedNodeId !== null && this.wireframeShader) {
+      const node = scene.getNode(this.selectedNodeId);
+      if (node && node.visible) {
+        const mesh = this.getMeshForType(node.type);
+        if (mesh) {
+          gl.useProgram(this.wireframeShader);
+          gl.disable(gl.DEPTH_TEST);
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+          const uModel = gl.getUniformLocation(this.wireframeShader, 'uModel');
+          const uView = gl.getUniformLocation(this.wireframeShader, 'uView');
+          const uProj = gl.getUniformLocation(this.wireframeShader, 'uProjection');
+          const uColor = gl.getUniformLocation(this.wireframeShader, 'uColor');
+
+          const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
+          gl.uniformMatrix4fv(uModel, false, model.data);
+          gl.uniformMatrix4fv(uView, false, view.data);
+          gl.uniformMatrix4fv(uProj, false, projection.data);
+          gl.uniform4f(uColor, 1, 0.6, 0, 0.8);
+
+          gl.bindVertexArray(mesh.vao);
+          gl.drawElements(gl.LINES, mesh.indexCount, mesh.indexType, 0);
+          gl.bindVertexArray(null);
+
+          gl.disable(gl.BLEND);
+          gl.enable(gl.DEPTH_TEST);
+        }
+      }
+    }
   }
 
   private renderGrid(view: Mat4, projection: Mat4): void {
@@ -297,5 +332,6 @@ export class Renderer {
     if (this.shaderProgram) gl.deleteProgram(this.shaderProgram);
     if (this.gridProgram) gl.deleteProgram(this.gridProgram);
     if (this.lineProgram) gl.deleteProgram(this.lineProgram);
+    if (this.wireframeShader) gl.deleteProgram(this.wireframeShader);
   }
 }

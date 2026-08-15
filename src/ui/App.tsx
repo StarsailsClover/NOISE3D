@@ -3,8 +3,11 @@ import { ViewportPanel } from './panels/ViewportPanel';
 import { HierarchyPanel } from './panels/HierarchyPanel';
 import { InspectorPanel } from './panels/InspectorPanel';
 import { ConsolePanel } from './panels/ConsolePanel';
+import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
+  useKeyboardShortcuts();
+
   return (
     <div className="app-layout">
       <Toolbar />
