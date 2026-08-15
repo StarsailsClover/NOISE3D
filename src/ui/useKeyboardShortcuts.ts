@@ -8,11 +8,37 @@ export function useKeyboardShortcuts() {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const toggleGrid = useEditorStore((s) => s.toggleGrid);
   const frameSelected = useEditorStore((s) => s.frameSelected);
+  const undo = useEditorStore((s) => s.undo);
+  const redo = useEditorStore((s) => s.redo);
+  const duplicateNode = useEditorStore((s) => s.duplicateNode);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+          return;
+        }
+        if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+          e.preventDefault();
+          redo();
+          return;
+        }
+        if (e.key === 'd' && selectedNodeId !== null) {
+          e.preventDefault();
+          duplicateNode(selectedNodeId);
+          return;
+        }
+        if (e.key === 'g') {
+          e.preventDefault();
+          toggleGrid();
+          return;
+        }
+      }
 
       switch (e.key.toLowerCase()) {
         case 'w':
@@ -26,12 +52,6 @@ export function useKeyboardShortcuts() {
           break;
         case 'f':
           frameSelected();
-          break;
-        case 'g':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            toggleGrid();
-          }
           break;
         case 'delete':
         case 'backspace':
@@ -54,5 +74,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [addPrimitive, setGizmoMode, removeNode, selectedNodeId, toggleGrid, frameSelected]);
+  }, [addPrimitive, setGizmoMode, removeNode, selectedNodeId, toggleGrid, frameSelected, undo, redo, duplicateNode]);
 }

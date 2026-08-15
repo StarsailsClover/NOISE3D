@@ -6,6 +6,9 @@ import { createDirectionalLight, createPointLight, createSpotLight } from '@scen
 import type { Material } from '@renderer/Material';
 import { createDefaultMaterial } from '@renderer/Material';
 import { SceneSerializer } from './SceneSerializer';
+import { UndoManager } from './UndoManager';
+
+const undoManager = new UndoManager();
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
@@ -47,6 +50,14 @@ export interface EditorState {
   loadSceneFromFile: (file: File) => void;
   newScene: () => void;
   sceneName: string;
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  duplicateNode: (id: number) => void;
+  moveNode: (id: number, newParentId: number) => void;
+  takeSnapshot: () => void;
+  undoRevision: number;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -67,12 +78,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   gizmoMode: 'translate' as GizmoMode,
   frameSelectedTrigger: 0,
   sceneName: 'Untitled',
+  undoRevision: 0,
 
   addPrimitive: (type, parentId) => {
     const state = get();
+    state.takeSnapshot();
     const node = state.scene.createPrimitive(type, undefined, parentId ?? null);
     state.materials.set(node.id, createDefaultMaterial());
-    set({ selectedNodeId: node.id });
+    set({ selectedNodeId: node.id, undoRevision: get().undoRevision + 1 });
     get().log('info', `Created ${type}: ${node.name}`);
   },
 
@@ -82,12 +95,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   removeNode: (id) => {
     const state = get();
+    state.takeSnapshot();
     state.scene.removeNode(id);
     state.materials.delete(id);
     if (state.selectedNodeId === id) {
-      set({ selectedNodeId: null });
+      set({ selectedNodeId: null, undoRevision: get().undoRevision + 1 });
+    } else {
+      set({ undoRevision: get().undoRevision + 1 });
     }
-    set({});
     get().log('info', `Removed node ${id}`);
   },
 
@@ -225,5 +240,69 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       sceneName: 'Untitled',
     });
     get().log('info', 'New scene created');
+  },
+
+  takeSnapshot: () => {
+    const state = get();
+    undoManager.snapshot(state.scene, state.materials, state.selectedNodeId, state.sceneName);
+  },
+
+  undo: () => {
+    const state = get();
+    const result = undoManager.undo(state.scene, state.materials, state.selectedNodeId, state.sceneName);
+    if (result) {
+      const restored = SceneSerializer.deserialize(result.sceneJson);
+      set({
+        scene: restored.scene,
+        materials: restored.materials,
+        selectedNodeId: result.selectedNodeId,
+        sceneName: result.sceneName,
+        undoRevision: get().undoRevision + 1,
+      });
+      get().log('info', 'Undo');
+    }
+  },
+
+  redo: () => {
+    const state = get();
+    const result = undoManager.redo(state.scene, state.materials, state.selectedNodeId, state.sceneName);
+    if (result) {
+      const restored = SceneSerializer.deserialize(result.sceneJson);
+      set({
+        scene: restored.scene,
+        materials: restored.materials,
+        selectedNodeId: result.selectedNodeId,
+        sceneName: result.sceneName,
+        undoRevision: get().undoRevision + 1,
+      });
+      get().log('info', 'Redo');
+    }
+  },
+
+  canUndo: () => undoManager.canUndo(),
+  canRedo: () => undoManager.canRedo(),
+
+  duplicateNode: (id) => {
+    const state = get();
+    const node = state.scene.getNode(id);
+    if (!node) return;
+    state.takeSnapshot();
+    const clone = node.clone();
+    clone.name = `${node.name} Copy`;
+    state.scene.addNode(clone, node.parentId);
+    const mat = state.materials.get(id);
+    if (mat) {
+      state.materials.set(clone.id, { ...mat, baseColor: mat.baseColor.clone(), emissive: mat.emissive.clone() });
+    }
+    set({ selectedNodeId: clone.id, scene: state.scene, undoRevision: get().undoRevision + 1 });
+    get().log('info', `Duplicated node: ${node.name}`);
+  },
+
+  moveNode: (id, newParentId) => {
+    const state = get();
+    state.takeSnapshot();
+    state.scene.moveNode(id, newParentId);
+    set({ scene: state.scene, undoRevision: get().undoRevision + 1 });
+    get().log('info', `Moved node ${id} to parent ${newParentId}`);
   },
 }));

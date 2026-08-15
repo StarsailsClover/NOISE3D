@@ -248,6 +248,37 @@
   opacity: 1;
 }
 
+.hierarchy-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+}
+
+.hierarchy-item:hover .hierarchy-actions {
+  opacity: 1;
+}
+
+.hierarchy-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+}
+
+.hierarchy-action-btn:hover {
+  color: var(--accent-blue);
+}
+
+.hierarchy-item.drag-over {
+  border-top: 2px solid var(--accent-blue);
+}
+
+.hierarchy-item.dragging {
+  opacity: 0.5;
+}
+
 .inspector-panel {
   height: 100%;
 }

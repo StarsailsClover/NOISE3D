@@ -1,5 +1,28 @@
 # Version History
 
+## v6.0.0 (2026-08-16) - LTS Release
+
+### Added
+- Undo/Redo system with snapshot-based state history (max 50 steps)
+- Keyboard shortcuts: Ctrl+Z (undo), Ctrl+Y/Ctrl+Shift+Z (redo), Ctrl+D (duplicate)
+- Undo/Redo toolbar buttons with disabled state
+- Node duplication (button and keyboard)
+- Drag-and-drop hierarchy reordering
+- Hierarchy per-item duplicate button on hover
+- UndoManager class with full serialize/deserialize state snapshots
+- Undo revision tracking for React reactivity
+
+### Improved
+- Hierarchy panel supports drag-to-reparent
+- Snapshot taken before mutations (add, remove, duplicate, move)
+- Console logs undo/redo/duplicate actions
+
+### Tested
+- 15 Playwright E2E tests for undo/redo and hierarchy
+- All v1-v5 tests still passing (69 tests total)
+
+## v6.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v5.0.0 (2026-08-16) - LTS Release
 
 ### Added

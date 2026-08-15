@@ -8,16 +8,29 @@ export function Toolbar() {
   const showGrid = useEditorStore((s) => s.showGrid);
   const toggleGrid = useEditorStore((s) => s.toggleGrid);
   const sceneName = useEditorStore((s) => s.sceneName);
-
+  const undo = useEditorStore((s) => s.undo);
+  const redo = useEditorStore((s) => s.redo);
+  const undoRevision = useEditorStore((s) => s.undoRevision);
+  const canUndo = useEditorStore((s) => s.canUndo());
+  const canRedo = useEditorStore((s) => s.canRedo());
+  const duplicateNode = useEditorStore((s) => s.duplicateNode);
+  const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
+  void undoRevision;
   return (
     <div className="main-toolbar">
       <div className="toolbar-group">
         <span className="app-title">NOISE3D</span>
-        <span className="app-version">v5.0.0</span>
+        <span className="app-version">v6.0.0</span>
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
         <FileMenu />
+      </div>
+      <div className="toolbar-separator" />
+      <div className="toolbar-group">
+        <button className="toolbar-btn" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">Undo</button>
+        <button className="toolbar-btn" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">Redo</button>
+        <button className="toolbar-btn" onClick={() => selectedNodeId && duplicateNode(selectedNodeId)} disabled={selectedNodeId === null} title="Duplicate (Ctrl+D)">Duplicate</button>
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
