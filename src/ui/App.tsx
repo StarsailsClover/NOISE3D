@@ -1,0 +1,25 @@
+import { Toolbar } from './Toolbar';
+import { ViewportPanel } from './panels/ViewportPanel';
+import { HierarchyPanel } from './panels/HierarchyPanel';
+import { InspectorPanel } from './panels/InspectorPanel';
+import { ConsolePanel } from './panels/ConsolePanel';
+
+export function App() {
+  return (
+    <div className="app-layout">
+      <Toolbar />
+      <div className="app-body">
+        <div className="app-left">
+          <HierarchyPanel />
+        </div>
+        <div className="app-center">
+          <ViewportPanel />
+          <ConsolePanel />
+        </div>
+        <div className="app-right">
+          <InspectorPanel />
+        </div>
+      </div>
+    </div>
+  );
+}
