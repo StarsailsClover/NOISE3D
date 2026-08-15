@@ -1,5 +1,28 @@
 # Version History
 
+## v4.0.0 (2026-08-16) - LTS Release
+
+### Added
+- Multi-light system supporting up to 8 concurrent lights
+- Three light types: Directional, Point, Spot
+- Per-light properties: position, direction, color, intensity, range
+- Spot light cone angles (inner/outer)
+- Light enable/disable toggle
+- Light panel UI with light list and inspector
+- Default Sun (directional light) in new scenes
+- Multi-light PBR shader with attenuation and spot cone
+
+### Improved
+- Fragment shader refactored for per-light contribution loop
+- Light state management with immutable array updates
+- Scene now holds lights array and ambient color
+
+### Tested
+- 15 Playwright E2E tests for lighting system
+- All v1/v2/v3 tests still passing (39 tests total)
+
+## v4.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v3.0.0 (2026-08-16) - LTS Release
 
 ### Added

@@ -9,7 +9,6 @@ export type PrimitiveType =
   | 'cylinder'
   | 'cone'
   | 'empty';
-
 export class SceneNode {
   id: number;
   name: string;

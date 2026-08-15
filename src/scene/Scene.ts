@@ -1,10 +1,13 @@
 import { SceneNode, type PrimitiveType } from './SceneNode';
+import type { Light } from './Light';
 
 export type { PrimitiveType };
 
 export class Scene {
   root: SceneNode;
   nodes: Map<number, SceneNode>;
+  lights: Light[] = [];
+  ambientColor: [number, number, number] = [0.2, 0.2, 0.2];
 
   constructor() {
     this.root = new SceneNode('Scene', 'empty');

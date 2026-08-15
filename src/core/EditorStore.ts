@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Scene, PrimitiveType } from '@scene/Scene';
 import { Vec3 } from '@math/Vec';
+import type { Light, LightType } from '@scene/Light';
+import { createDirectionalLight, createPointLight, createSpotLight } from '@scene/Light';
 import type { Material } from '@renderer/Material';
 import { createDefaultMaterial } from '@renderer/Material';
 
@@ -9,6 +11,7 @@ export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export interface EditorState {
   scene: Scene;
   selectedNodeId: number | null;
+  selectedLightId: number | null;
   showGrid: boolean;
   cameraPos: Vec3;
   cameraTarget: Vec3;
@@ -33,11 +36,20 @@ export interface EditorState {
   clearConsole: () => void;
   setGizmoMode: (mode: GizmoMode) => void;
   frameSelected: () => void;
+  addLight: (type: LightType) => void;
+  removeLight: (id: number) => void;
+  selectLight: (id: number | null) => void;
+  updateLight: (id: number, partial: Partial<Light>) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
-  scene: new Scene(),
+  scene: (() => {
+    const s = new Scene();
+    s.lights.push(createDirectionalLight('Sun'));
+    return s;
+  })(),
   selectedNodeId: null,
+  selectedLightId: null,
   showGrid: true,
   cameraPos: new Vec3(5, 5, 5),
   cameraTarget: new Vec3(0, 0, 0),
@@ -114,4 +126,38 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   frameSelected: () =>
     set((s) => ({ frameSelectedTrigger: s.frameSelectedTrigger + 1 })),
+
+  addLight: (type) => {
+    const state = get();
+    let light: Light;
+    if (type === 'directional') light = createDirectionalLight();
+    else if (type === 'point') light = createPointLight();
+    else light = createSpotLight();
+    state.scene.lights = [...state.scene.lights, light];
+    set({ scene: state.scene, selectedLightId: light.id });
+    get().log('info', `Created ${type} light: ${light.name}`);
+  },
+
+  removeLight: (id) => {
+    const state = get();
+    state.scene.lights = state.scene.lights.filter((l) => l.id !== id);
+    if (state.selectedLightId === id) {
+      set({ selectedLightId: null, scene: state.scene });
+    } else {
+      set({ scene: state.scene });
+    }
+    get().log('info', `Removed light ${id}`);
+  },
+
+  selectLight: (id) => {
+    set({ selectedLightId: id, selectedNodeId: null });
+  },
+
+  updateLight: (id, partial) => {
+    const state = get();
+    state.scene.lights = state.scene.lights.map((l) =>
+      l.id === id ? { ...l, ...partial } : l
+    );
+    set({ scene: state.scene });
+  },
 }));

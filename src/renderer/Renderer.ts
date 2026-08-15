@@ -1,6 +1,7 @@
 import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
 import { Scene } from '@scene/Scene';
+import { MAX_LIGHTS } from '@scene/Light';
 import { MeshData, GeometryGenerator } from './Geometry';
 import { Material, createDefaultMaterial } from './Material';
 import {
@@ -42,11 +43,8 @@ export class Renderer {
   public near: number = 0.1;
   public far: number = 1000;
 
-  public lightDir: Vec3 = new Vec3(-0.5, -1, -0.3);
-  public lightColor: Vec3 = new Vec3(1, 1, 1);
-  public ambient: Vec3 = new Vec3(0.2, 0.2, 0.2);
-
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
+  public ambient: Vec3 = new Vec3(0.2, 0.2, 0.2);
   public showGrid: boolean = true;
   public selectedNodeId: number | null = null;
 
@@ -294,8 +292,15 @@ export class Renderer {
       const uRoughness = gl.getUniformLocation(this.shaderProgram, 'uRoughness');
       const uCameraPos = gl.getUniformLocation(this.shaderProgram, 'uCameraPos');
       const uAmbient = gl.getUniformLocation(this.shaderProgram, 'uAmbient');
-      const uLightDir = gl.getUniformLocation(this.shaderProgram, 'uLightDir');
-      const uLightColor = gl.getUniformLocation(this.shaderProgram, 'uLightColor');
+      const uLightCount = gl.getUniformLocation(this.shaderProgram, 'uLightCount');
+      const uLightTypes = gl.getUniformLocation(this.shaderProgram, 'uLightTypes');
+      const uLightPositions = gl.getUniformLocation(this.shaderProgram, 'uLightPositions');
+      const uLightDirections = gl.getUniformLocation(this.shaderProgram, 'uLightDirections');
+      const uLightColors = gl.getUniformLocation(this.shaderProgram, 'uLightColors');
+      const uLightIntensities = gl.getUniformLocation(this.shaderProgram, 'uLightIntensities');
+      const uLightRanges = gl.getUniformLocation(this.shaderProgram, 'uLightRanges');
+      const uLightInnerCone = gl.getUniformLocation(this.shaderProgram, 'uLightInnerCone');
+      const uLightOuterCone = gl.getUniformLocation(this.shaderProgram, 'uLightOuterCone');
       const uHasTexture = gl.getUniformLocation(this.shaderProgram, 'uHasTexture');
       const uTexture = gl.getUniformLocation(this.shaderProgram, 'uTexture');
       const uTexTiling = gl.getUniformLocation(this.shaderProgram, 'uTextureTiling');
@@ -305,8 +310,45 @@ export class Renderer {
       gl.uniformMatrix4fv(uProj, false, projection.data);
       gl.uniform3f(uCameraPos, this.cameraPos.x, this.cameraPos.y, this.cameraPos.z);
       gl.uniform3f(uAmbient, this.ambient.x, this.ambient.y, this.ambient.z);
-      gl.uniform3f(uLightDir, this.lightDir.x, this.lightDir.y, this.lightDir.z);
-      gl.uniform3f(uLightColor, this.lightColor.x, this.lightColor.y, this.lightColor.z);
+
+      const lights = scene.lights.filter((l) => l.enabled).slice(0, MAX_LIGHTS);
+      gl.uniform1i(uLightCount, lights.length);
+
+      const types = new Int32Array(MAX_LIGHTS);
+      const positions = new Float32Array(MAX_LIGHTS * 3);
+      const directions = new Float32Array(MAX_LIGHTS * 3);
+      const colors = new Float32Array(MAX_LIGHTS * 3);
+      const intensities = new Float32Array(MAX_LIGHTS);
+      const ranges = new Float32Array(MAX_LIGHTS);
+      const innerCones = new Float32Array(MAX_LIGHTS);
+      const outerCones = new Float32Array(MAX_LIGHTS);
+
+      for (let i = 0; i < lights.length; i++) {
+        const light = lights[i];
+        types[i] = light.type === 'directional' ? 0 : light.type === 'point' ? 1 : 2;
+        positions[i * 3] = light.position.x;
+        positions[i * 3 + 1] = light.position.y;
+        positions[i * 3 + 2] = light.position.z;
+        directions[i * 3] = light.direction.x;
+        directions[i * 3 + 1] = light.direction.y;
+        directions[i * 3 + 2] = light.direction.z;
+        colors[i * 3] = light.color.r;
+        colors[i * 3 + 1] = light.color.g;
+        colors[i * 3 + 2] = light.color.b;
+        intensities[i] = light.intensity;
+        ranges[i] = light.range;
+        innerCones[i] = light.innerConeAngle;
+        outerCones[i] = light.outerConeAngle;
+      }
+
+      gl.uniform1iv(uLightTypes, types);
+      gl.uniform3fv(uLightPositions, positions);
+      gl.uniform3fv(uLightDirections, directions);
+      gl.uniform3fv(uLightColors, colors);
+      gl.uniform1fv(uLightIntensities, intensities);
+      gl.uniform1fv(uLightRanges, ranges);
+      gl.uniform1fv(uLightInnerCone, innerCones);
+      gl.uniform1fv(uLightOuterCone, outerCones);
       gl.uniform1i(uTexture, 0);
 
       for (const node of scene.getAllNodes()) {
