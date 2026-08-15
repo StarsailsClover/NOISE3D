@@ -602,3 +602,78 @@
 .light-inspector {
   border-top: 1px solid var(--border-color);
 }
+
+.file-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+}
+
+.file-menu {
+  position: absolute;
+  top: 36px;
+  left: 110px;
+  background: var(--bg-medium);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  min-width: 220px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+}
+
+.file-menu-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+
+.file-menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.file-menu-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.file-menu-row {
+  padding: 4px 8px;
+}
+
+.file-menu-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.file-menu-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.file-menu-info {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.scene-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}

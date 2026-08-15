@@ -1,5 +1,29 @@
 # Version History
 
+## v5.0.0 (2026-08-16) - LTS Release
+
+### Added
+- Scene serialization and deserialization (JSON format)
+- Save/Load to browser localStorage
+- Scene download as .json file
+- Scene import from .json file
+- New scene creation
+- File menu UI with scene name input
+- Scene name display in toolbar
+- SceneSerializer class with full round-trip serialization
+- Node ID counter persistence across save/load
+- Light serialization (all light types and properties)
+- Material serialization (all PBR properties)
+
+### Fixed
+- Deserialized scene now correctly rebuilds root node child references
+
+### Tested
+- 14 Playwright E2E tests for serialization
+- All v1-v4 tests still passing (54 tests total)
+
+## v5.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v4.0.0 (2026-08-16) - LTS Release
 
 ### Added

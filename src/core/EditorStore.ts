@@ -5,6 +5,7 @@ import type { Light, LightType } from '@scene/Light';
 import { createDirectionalLight, createPointLight, createSpotLight } from '@scene/Light';
 import type { Material } from '@renderer/Material';
 import { createDefaultMaterial } from '@renderer/Material';
+import { SceneSerializer } from './SceneSerializer';
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
@@ -40,6 +41,12 @@ export interface EditorState {
   removeLight: (id: number) => void;
   selectLight: (id: number | null) => void;
   updateLight: (id: number, partial: Partial<Light>) => void;
+  saveScene: (name: string) => void;
+  loadScene: (name: string) => void;
+  downloadScene: (name: string) => void;
+  loadSceneFromFile: (file: File) => void;
+  newScene: () => void;
+  sceneName: string;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -59,6 +66,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   consoleMessages: [],
   gizmoMode: 'translate' as GizmoMode,
   frameSelectedTrigger: 0,
+  sceneName: 'Untitled',
 
   addPrimitive: (type, parentId) => {
     const state = get();
@@ -159,5 +167,63 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       l.id === id ? { ...l, ...partial } : l
     );
     set({ scene: state.scene });
+  },
+
+  saveScene: (name) => {
+    const state = get();
+    SceneSerializer.saveToLocal(state.scene, state.materials, name);
+    set({ sceneName: name });
+    get().log('info', `Scene saved: ${name}`);
+  },
+
+  loadScene: (name) => {
+    const result = SceneSerializer.loadFromLocal(name);
+    if (!result) {
+      get().log('error', `Scene not found: ${name}`);
+      return;
+    }
+    set({
+      scene: result.scene,
+      materials: result.materials,
+      selectedNodeId: null,
+      selectedLightId: null,
+      sceneName: result.name,
+    });
+    get().log('info', `Scene loaded: ${name}`);
+  },
+
+  downloadScene: (name) => {
+    const state = get();
+    SceneSerializer.download(state.scene, state.materials, name);
+    get().log('info', `Scene downloaded: ${name}`);
+  },
+
+  loadSceneFromFile: async (file) => {
+    try {
+      const result = await SceneSerializer.loadFromFile(file);
+      set({
+        scene: result.scene,
+        materials: result.materials,
+        selectedNodeId: null,
+        selectedLightId: null,
+        sceneName: result.name,
+      });
+      get().log('info', `Scene loaded from file: ${file.name}`);
+    } catch (e) {
+      get().log('error', `Failed to load scene: ${e}`);
+    }
+  },
+
+  newScene: () => {
+    const newScene = new Scene();
+    newScene.lights.push(createDirectionalLight('Sun'));
+    set({
+      scene: newScene,
+      materials: new Map(),
+      selectedNodeId: null,
+      selectedLightId: null,
+      sceneName: 'Untitled',
+    });
+    get().log('info', 'New scene created');
   },
 }));
