@@ -1,5 +1,6 @@
 import { useEditorStore } from '@core/EditorStore';
-import { Vec3 } from '@math/Vec';
+import { Vec3, Color } from '@math/Vec';
+import { MATERIAL_PRESETS } from '@renderer/Material';
 
 export function InspectorPanel() {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
@@ -190,32 +191,184 @@ export function InspectorPanel() {
         </div>
 
         {material && (
-          <div className="inspector-section">
-            <label className="inspector-label">Material</label>
-            <label className="inspector-sublabel">Base Color</label>
-            <input
-              className="inspector-color"
-              type="color"
-              value={material.baseColor.toHex()}
-              onChange={(e) =>
-                setMaterial(node.id, {
-                  baseColor: (() => {
-                    const m = e.target.value.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i);
-                    if (!m) return material.baseColor;
-                    return {
-                      r: parseInt(m[1], 16) / 255,
-                      g: parseInt(m[2], 16) / 255,
-                      b: parseInt(m[3], 16) / 255,
-                      a: material.baseColor.a,
-                      toHex: material.baseColor.toHex.bind(material.baseColor),
-                      clone: material.baseColor.clone.bind(material.baseColor),
-                      toArray: material.baseColor.toArray.bind(material.baseColor),
-                    } as any;
-                  })(),
-                })
-              }
-            />
-          </div>
+          <>
+            <div className="inspector-section">
+              <label className="inspector-label">Material Presets</label>
+              <div className="material-presets">
+                {MATERIAL_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    className="material-preset-btn"
+                    onClick={() =>
+                      setMaterial(node.id, {
+                        baseColor: preset.material.baseColor.clone(),
+                        metallic: preset.material.metallic,
+                        roughness: preset.material.roughness,
+                        emissive: preset.material.emissive.clone(),
+                        emissiveIntensity: preset.material.emissiveIntensity,
+                      })
+                    }
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="inspector-section">
+              <label className="inspector-label">Surface</label>
+
+              <label className="inspector-sublabel">Base Color</label>
+              <input
+                className="inspector-color"
+                type="color"
+                value={material.baseColor.toHex()}
+                onChange={(e) => {
+                  const newColor = Color.fromString(e.target.value);
+                  setMaterial(node.id, { baseColor: newColor });
+                }}
+              />
+
+              <label className="inspector-sublabel">Metallic</label>
+              <div className="inspector-slider-row">
+                <input
+                  className="inspector-slider"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={material.metallic}
+                  onChange={(e) =>
+                    setMaterial(node.id, { metallic: parseFloat(e.target.value) })
+                  }
+                />
+                <span className="inspector-slider-value">
+                  {material.metallic.toFixed(2)}
+                </span>
+              </div>
+
+              <label className="inspector-sublabel">Roughness</label>
+              <div className="inspector-slider-row">
+                <input
+                  className="inspector-slider"
+                  type="range"
+                  min="0.05"
+                  max="1"
+                  step="0.01"
+                  value={material.roughness}
+                  onChange={(e) =>
+                    setMaterial(node.id, { roughness: parseFloat(e.target.value) })
+                  }
+                />
+                <span className="inspector-slider-value">
+                  {material.roughness.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="inspector-section">
+              <label className="inspector-label">Emission</label>
+
+              <label className="inspector-sublabel">Emissive Color</label>
+              <input
+                className="inspector-color"
+                type="color"
+                value={material.emissive.toHex()}
+                onChange={(e) => {
+                  const newColor = Color.fromString(e.target.value);
+                  setMaterial(node.id, { emissive: newColor });
+                }}
+              />
+
+              <label className="inspector-sublabel">Emissive Intensity</label>
+              <div className="inspector-slider-row">
+                <input
+                  className="inspector-slider"
+                  type="range"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  value={material.emissiveIntensity}
+                  onChange={(e) =>
+                    setMaterial(node.id, { emissiveIntensity: parseFloat(e.target.value) })
+                  }
+                />
+                <span className="inspector-slider-value">
+                  {material.emissiveIntensity.toFixed(1)}
+                </span>
+              </div>
+            </div>
+
+            <div className="inspector-section">
+              <label className="inspector-label">Texture UV</label>
+
+              <label className="inspector-sublabel">Tiling</label>
+              <div className="inspector-vec3">
+                <input
+                  className="inspector-number"
+                  type="number"
+                  step="0.1"
+                  value={material.textureTiling[0].toFixed(2)}
+                  onChange={(e) =>
+                    setMaterial(node.id, {
+                      textureTiling: [parseFloat(e.target.value) || 1, material.textureTiling[1]],
+                    })
+                  }
+                />
+                <input
+                  className="inspector-number"
+                  type="number"
+                  step="0.1"
+                  value={material.textureTiling[1].toFixed(2)}
+                  onChange={(e) =>
+                    setMaterial(node.id, {
+                      textureTiling: [material.textureTiling[0], parseFloat(e.target.value) || 1],
+                    })
+                  }
+                />
+              </div>
+
+              <label className="inspector-sublabel">Offset</label>
+              <div className="inspector-vec3">
+                <input
+                  className="inspector-number"
+                  type="number"
+                  step="0.1"
+                  value={material.textureOffset[0].toFixed(2)}
+                  onChange={(e) =>
+                    setMaterial(node.id, {
+                      textureOffset: [parseFloat(e.target.value) || 0, material.textureOffset[1]],
+                    })
+                  }
+                />
+                <input
+                  className="inspector-number"
+                  type="number"
+                  step="0.1"
+                  value={material.textureOffset[1].toFixed(2)}
+                  onChange={(e) =>
+                    setMaterial(node.id, {
+                      textureOffset: [material.textureOffset[0], parseFloat(e.target.value) || 0],
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="inspector-section">
+              <label className="inspector-label">Render Options</label>
+              <label className="inspector-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={material.doubleSided}
+                  onChange={(e) =>
+                    setMaterial(node.id, { doubleSided: e.target.checked })
+                  }
+                />
+                <span className="inspector-checkbox-label">Double Sided</span>
+              </label>
+            </div>
+          </>
         )}
       </div>
     </div>

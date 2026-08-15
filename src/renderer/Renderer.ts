@@ -30,8 +30,10 @@ export class Renderer {
   private shaderProgram: WebGLProgram | null = null;
   private gridProgram: WebGLProgram | null = null;
   private lineProgram: WebGLProgram | null = null;
+  public wireframeShader: WebGLProgram | null = null;
   private meshCache: Map<string, GLMesh> = new Map();
   private gridBuffers: GridBuffers | null = null;
+  private textures: Map<string, WebGLTexture> = new Map();
 
   public cameraPos: Vec3 = new Vec3(5, 5, 5);
   public cameraTarget: Vec3 = new Vec3(0, 0, 0);
@@ -47,7 +49,6 @@ export class Renderer {
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
   public showGrid: boolean = true;
   public selectedNodeId: number | null = null;
-  public wireframeShader: WebGLProgram | null = null;
 
   private materials: Map<number, Material> = new Map();
 
@@ -216,6 +217,50 @@ export class Renderer {
     return this.materials.get(nodeId) ?? createDefaultMaterial();
   }
 
+  loadTextureFromImage(textureId: string, image: HTMLImageElement): void {
+    const gl = this.gl;
+    const texture = gl.createTexture();
+    if (!texture) return;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.textures.set(textureId, texture);
+  }
+
+  createCheckerTexture(textureId: string): void {
+    const gl = this.gl;
+    const size = 64;
+    const data = new Uint8Array(size * size * 4);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const idx = (y * size + x) * 4;
+        const checker = ((Math.floor(x / 8) + Math.floor(y / 8)) % 2) === 0;
+        const v = checker ? 200 : 100;
+        data[idx] = v;
+        data[idx + 1] = v;
+        data[idx + 2] = v;
+        data[idx + 3] = 255;
+      }
+    }
+    const texture = gl.createTexture();
+    if (!texture) return;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.textures.set(textureId, texture);
+  }
+
   render(scene: Scene, canvasWidth: number, canvasHeight: number): void {
     const gl = this.gl;
 
@@ -243,10 +288,18 @@ export class Renderer {
       const uProj = gl.getUniformLocation(this.shaderProgram, 'uProjection');
       const uNormalMat = gl.getUniformLocation(this.shaderProgram, 'uNormalMatrix');
       const uBaseColor = gl.getUniformLocation(this.shaderProgram, 'uBaseColor');
+      const uEmissive = gl.getUniformLocation(this.shaderProgram, 'uEmissive');
+      const uEmissiveIntensity = gl.getUniformLocation(this.shaderProgram, 'uEmissiveIntensity');
+      const uMetallic = gl.getUniformLocation(this.shaderProgram, 'uMetallic');
+      const uRoughness = gl.getUniformLocation(this.shaderProgram, 'uRoughness');
       const uCameraPos = gl.getUniformLocation(this.shaderProgram, 'uCameraPos');
       const uAmbient = gl.getUniformLocation(this.shaderProgram, 'uAmbient');
       const uLightDir = gl.getUniformLocation(this.shaderProgram, 'uLightDir');
       const uLightColor = gl.getUniformLocation(this.shaderProgram, 'uLightColor');
+      const uHasTexture = gl.getUniformLocation(this.shaderProgram, 'uHasTexture');
+      const uTexture = gl.getUniformLocation(this.shaderProgram, 'uTexture');
+      const uTexTiling = gl.getUniformLocation(this.shaderProgram, 'uTextureTiling');
+      const uTexOffset = gl.getUniformLocation(this.shaderProgram, 'uTextureOffset');
 
       gl.uniformMatrix4fv(uView, false, view.data);
       gl.uniformMatrix4fv(uProj, false, projection.data);
@@ -254,6 +307,7 @@ export class Renderer {
       gl.uniform3f(uAmbient, this.ambient.x, this.ambient.y, this.ambient.z);
       gl.uniform3f(uLightDir, this.lightDir.x, this.lightDir.y, this.lightDir.z);
       gl.uniform3f(uLightColor, this.lightColor.x, this.lightColor.y, this.lightColor.z);
+      gl.uniform1i(uTexture, 0);
 
       for (const node of scene.getAllNodes()) {
         if (!node.visible) continue;
@@ -268,6 +322,26 @@ export class Renderer {
 
         const mat = this.getMaterial(node.id);
         gl.uniform4f(uBaseColor, mat.baseColor.r, mat.baseColor.g, mat.baseColor.b, mat.baseColor.a);
+        gl.uniform3f(uEmissive, mat.emissive.r, mat.emissive.g, mat.emissive.b);
+        gl.uniform1f(uEmissiveIntensity, mat.emissiveIntensity);
+        gl.uniform1f(uMetallic, mat.metallic);
+        gl.uniform1f(uRoughness, mat.roughness);
+
+        const hasTex = mat.textureId !== null && this.textures.has(mat.textureId);
+        gl.uniform1i(uHasTexture, hasTex ? 1 : 0);
+        gl.uniform2f(uTexTiling, mat.textureTiling[0], mat.textureTiling[1]);
+        gl.uniform2f(uTexOffset, mat.textureOffset[0], mat.textureOffset[1]);
+
+        if (hasTex && mat.textureId) {
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, this.textures.get(mat.textureId)!);
+        }
+
+        if (mat.doubleSided) {
+          gl.disable(gl.CULL_FACE);
+        } else {
+          gl.enable(gl.CULL_FACE);
+        }
 
         gl.bindVertexArray(mesh.vao);
         gl.drawElements(gl.TRIANGLES, mesh.indexCount, mesh.indexType, 0);
@@ -333,5 +407,9 @@ export class Renderer {
     if (this.gridProgram) gl.deleteProgram(this.gridProgram);
     if (this.lineProgram) gl.deleteProgram(this.lineProgram);
     if (this.wireframeShader) gl.deleteProgram(this.wireframeShader);
+    for (const tex of this.textures.values()) {
+      gl.deleteTexture(tex);
+    }
+    this.textures.clear();
   }
 }

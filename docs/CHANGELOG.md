@@ -1,5 +1,28 @@
 # Version History
 
+## v3.0.0 (2026-08-16) - LTS Release
+
+### Added
+- PBR-based material shader with Cook-Torrance BRDF (GGX distribution, Smith geometry, Schlick fresnel)
+- Metallic and roughness material parameters with sliders
+- Emissive color and intensity controls
+- Texture support (UV tiling, offset, checker texture)
+- Material presets: Default, Metal, Plastic, Emissive, Glass-like
+- Double-sided rendering toggle
+- Texture loading infrastructure (loadTextureFromImage, createCheckerTexture)
+- Enhanced Inspector with full material editing UI
+
+### Improved
+- Fragment shader upgraded from Blinn-Phong to physically-based rendering
+- Material state uses immutable Map updates for proper React reactivity
+- Inspector panel reorganized with collapsible sections
+
+### Tested
+- 13 Playwright E2E tests for material system
+- All v1/v2 tests still passing (26 tests)
+
+## v3.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v2.0.0 (2026-08-16) - LTS Release
 
 ### Added

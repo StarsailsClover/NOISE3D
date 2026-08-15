@@ -11,7 +11,7 @@ export function Toolbar() {
     <div className="main-toolbar">
       <div className="toolbar-group">
         <span className="app-title">NOISE3D</span>
-        <span className="app-version">v2.0.0</span>
+        <span className="app-version">v3.0.0</span>
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">

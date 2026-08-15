@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { Scene, PrimitiveType } from '@scene/Scene';
-import { Vec3, Color } from '@math/Vec';
+import { Vec3 } from '@math/Vec';
 import type { Material } from '@renderer/Material';
+import { createDefaultMaterial } from '@renderer/Material';
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
@@ -50,12 +51,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   addPrimitive: (type, parentId) => {
     const state = get();
     const node = state.scene.createPrimitive(type, undefined, parentId ?? null);
-    state.materials.set(node.id, {
-      baseColor: Color.fromHex(0xcccccc),
-      metallic: 0,
-      roughness: 0.5,
-      wireframe: false,
-    });
+    state.materials.set(node.id, createDefaultMaterial());
     set({ selectedNodeId: node.id });
     get().log('info', `Created ${type}: ${node.name}`);
   },
@@ -91,16 +87,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({});
   },
 
-  setMaterial: (id, partial) => {
+  setMaterial: (id: number, material: Partial<Material>) => {
     const state = get();
-    const existing = state.materials.get(id) ?? {
-      baseColor: Color.fromHex(0xcccccc),
-      metallic: 0,
-      roughness: 0.5,
-      wireframe: false,
-    };
-    state.materials.set(id, { ...existing, ...partial });
-    set({});
+    const existing = state.materials.get(id) ?? createDefaultMaterial();
+    const newMaterial = { ...existing, ...material } as Material;
+    const newMap = new Map(state.materials);
+    newMap.set(id, newMaterial);
+    set({ materials: newMap });
   },
 
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
