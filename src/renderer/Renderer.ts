@@ -46,6 +46,9 @@ export class Renderer {
 
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
   public ambient: Vec3 = new Vec3(0.2, 0.2, 0.2);
+  public postExposure: number = 1.0;
+  public postBloomThreshold: number = 1.0;
+  public postBloomIntensity: number = 0.3;
   public showGrid: boolean = true;
   public selectedNodeId: number | null = null;
 

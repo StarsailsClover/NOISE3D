@@ -11,6 +11,9 @@ export function FileMenu() {
   const downloadScene = useEditorStore((s) => s.downloadScene);
   const loadSceneFromFile = useEditorStore((s) => s.loadSceneFromFile);
   const newScene = useEditorStore((s) => s.newScene);
+  const exportOBJ = useEditorStore((s) => s.exportOBJ);
+  const exportJSON = useEditorStore((s) => s.exportJSON);
+  const exportPNG = useEditorStore((s) => s.exportPNG);
   const currentName = useEditorStore((s) => s.sceneName);
 
   const handleSave = () => {
@@ -76,6 +79,16 @@ export function FileMenu() {
             </div>
             <div className="file-menu-item" onClick={() => fileInputRef.current?.click()}>
               Import .json
+            </div>
+            <div className="file-menu-divider" />
+            <div className="file-menu-item" onClick={() => { exportOBJ(); setOpen(false); }}>
+              Export OBJ
+            </div>
+            <div className="file-menu-item" onClick={() => { exportJSON(); setOpen(false); }}>
+              Export JSON
+            </div>
+            <div className="file-menu-item" onClick={() => { exportPNG(); setOpen(false); }}>
+              Export PNG
             </div>
             <div className="file-menu-divider" />
             <div className="file-menu-info">

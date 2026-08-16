@@ -1,6 +1,6 @@
 {
   "name": "noise3d",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "description": "WebGL-based 3D/2D scene editor inspired by Unity and Blender",
   "type": "module",
   "scripts": {

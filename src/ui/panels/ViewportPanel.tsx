@@ -22,6 +22,10 @@ export function ViewportPanel() {
   const materials = useEditorStore((s) => s.materials);
   const selectNode = useEditorStore((s) => s.selectNode);
   const frameSelectedTrigger = useEditorStore((s) => s.frameSelectedTrigger);
+  const setRenderCanvas = useEditorStore((s) => s.setRenderCanvas);
+  const postExposure = useEditorStore((s) => s.postExposure);
+  const postBloomThreshold = useEditorStore((s) => s.postBloomThreshold);
+  const postBloomIntensity = useEditorStore((s) => s.postBloomIntensity);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,6 +39,7 @@ export function ViewportPanel() {
       return;
     }
     rendererRef.current = renderer;
+    setRenderCanvas(canvas);
 
     const cam = cameraRef.current;
     cam.distance = 10;
@@ -73,6 +78,7 @@ export function ViewportPanel() {
       resizeObserver.disconnect();
       renderer.dispose();
       rendererRef.current = null;
+      setRenderCanvas(null);
     };
   }, []);
 
@@ -88,6 +94,14 @@ export function ViewportPanel() {
       }
     }
   }, [showGrid, selectedNodeId, materials, scene]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.postExposure = postExposure;
+      rendererRef.current.postBloomThreshold = postBloomThreshold;
+      rendererRef.current.postBloomIntensity = postBloomIntensity;
+    }
+  }, [postExposure, postBloomThreshold, postBloomIntensity]);
 
   useEffect(() => {
     if (frameSelectedTrigger === 0) return;

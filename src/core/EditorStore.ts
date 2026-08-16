@@ -9,6 +9,7 @@ import { SceneSerializer } from './SceneSerializer';
 import { UndoManager } from './UndoManager';
 import { AssetManager, type Asset } from './AssetManager';
 import { OBJParser } from '@renderer/OBJParser';
+import { SceneExporter } from '@renderer/SceneExporter';
 
 const undoManager = new UndoManager();
 const assetManager = new AssetManager();
@@ -65,6 +66,15 @@ export interface EditorState {
   importOBJ: (file: File) => void;
   importTexture: (file: File) => void;
   addCustomMeshNode: (meshAssetId: string, name: string) => void;
+  exportOBJ: () => void;
+  exportJSON: () => void;
+  exportPNG: () => void;
+  postExposure: number;
+  postBloomThreshold: number;
+  postBloomIntensity: number;
+  setPostSetting: (key: string, value: number) => void;
+  renderCanvas: HTMLCanvasElement | null;
+  setRenderCanvas: (canvas: HTMLCanvasElement | null) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -87,6 +97,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   sceneName: 'Untitled',
   undoRevision: 0,
   assets: [],
+  postExposure: 1.0,
+  postBloomThreshold: 1.0,
+  postBloomIntensity: 0.3,
+  renderCanvas: null,
 
   addPrimitive: (type, parentId) => {
     const state = get();
@@ -344,4 +358,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ selectedNodeId: node.id, undoRevision: get().undoRevision + 1 });
     get().log('info', `Added custom mesh: ${name}`);
   },
+
+  exportOBJ: () => {
+    const state = get();
+    SceneExporter.downloadOBJ(state.scene, state.materials, state.sceneName);
+    get().log('info', 'Exported OBJ');
+  },
+
+  exportJSON: () => {
+    const state = get();
+    SceneExporter.downloadJSON(state.scene, state.materials, state.sceneName);
+    get().log('info', 'Exported JSON');
+  },
+
+  exportPNG: () => {
+    const state = get();
+    if (state.renderCanvas) {
+      SceneExporter.downloadPNG(state.renderCanvas, state.sceneName);
+      get().log('info', 'Exported PNG');
+    }
+  },
+
+  setPostSetting: (key, value) => {
+    set({ [key]: value } as any);
+  },
+
+  setRenderCanvas: (canvas) => set({ renderCanvas: canvas }),
 }));

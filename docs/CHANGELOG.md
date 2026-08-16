@@ -1,5 +1,28 @@
 # Version History
 
+## v8.0.0 (2026-08-16) - LTS Release
+
+### Added
+- Post-processing shader pipeline (ACES tone mapping, bloom bright pass, gamma correction)
+- Post-processing shader sources (vertex, fragment, shadow, depth debug)
+- Render settings panel with exposure, bloom threshold, bloom intensity sliders
+- Scene export to OBJ format
+- Scene export to JSON format (full scene metadata)
+- Scene export to PNG (viewport screenshot)
+- Export options in File menu (OBJ, JSON, PNG)
+- Render canvas registration in store for PNG export
+
+### Improved
+- Renderer exposes post-processing parameters (exposure, bloomThreshold, bloomIntensity)
+- ViewportPanel applies post settings to renderer reactively
+- SceneExporter class with OBJ/JSON/PNG download methods
+
+### Tested
+- 13 Playwright E2E tests for export and post-processing
+- All v1-v7 tests still passing (94 tests total)
+
+## v8.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v7.0.0 (2026-08-16) - LTS Release
 
 ### Added

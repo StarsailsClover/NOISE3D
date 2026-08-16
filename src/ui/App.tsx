@@ -5,6 +5,7 @@ import { InspectorPanel } from './panels/InspectorPanel';
 import { ConsolePanel } from './panels/ConsolePanel';
 import { LightPanel } from './panels/LightPanel';
 import { AssetPanel } from './panels/AssetPanel';
+import { RenderSettingsPanel } from './panels/RenderSettingsPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -25,6 +26,7 @@ export function App() {
         </div>
         <div className="app-right">
           <InspectorPanel />
+          <RenderSettingsPanel />
         </div>
       </div>
     </div>

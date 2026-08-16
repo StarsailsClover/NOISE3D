@@ -767,3 +767,18 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.render-settings-panel {
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.app-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-right .inspector-panel {
+  flex: 1;
+  overflow: hidden;
+}
