@@ -1,6 +1,33 @@
 # Version History
 
-## v9.0.0 (2026-08-16) - LTS Release
+## v26.1-08.0 (2026-08-17) - LTS Release
+
+### Added
+- WebGPU rendering backend with WGSL shaders (full PBR pipeline)
+- Dual-backend architecture: WebGL2 (fallback) + WebGPU (preferred)
+- Runtime backend detection and async upgrade to WebGPU
+- Backend badge in toolbar showing active renderer
+- Embedded script editor with JavaScript sandbox execution
+- Script API: scene, nodes, lights, log() globals
+- Script error handling with output panel
+- Code editor with Run/Reset buttons and default API documentation
+- Version control reform: calendar-semantic hybrid scheme (vYY.MAJOR-MM.MINOR.TYPE)
+- Versioning policy documentation (VERSIONING.md / VERSIONING_zh.md)
+- @webgpu/types for TypeScript WebGPU type definitions
+
+### Improved
+- RendererFactory with createRendererSync and createRendererAsync
+- WebGPURenderer with ready promise and initialized flag
+- ViewportPanel gracefully falls back to WebGL2 if WebGPU fails
+- IRenderer interface for backend-agnostic rendering
+
+### Tested
+- 14 Playwright E2E tests for WebGPU and scripting
+- All v1-v9 tests still passing (126 tests total)
+
+## v26.1-08.0.RC (2026-08-17) - Pre-Release
+
+## v9.0.0 (2026-08-16) - LTS Release (legacy versioning)
 
 ### Added
 - Animation system with keyframe tracks (position, rotation, scale)

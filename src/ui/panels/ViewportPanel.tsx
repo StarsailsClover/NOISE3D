@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { Renderer } from '@renderer/Renderer';
+import { WebGPURenderer, isWebGPUAvailable } from '@renderer/WebGPURenderer';
+import type { IRenderer } from '@renderer/RendererFactory';
 import { Scene } from '@scene/Scene';
 import { OrbitCamera } from '@engine/OrbitCamera';
 import { Ray } from '@engine/Ray';
@@ -9,7 +11,7 @@ import { Mat4 } from '@math/Mat4';
 
 export function ViewportPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<Renderer | null>(null);
+  const rendererRef = useRef<IRenderer | null>(null);
   const cameraRef = useRef<OrbitCamera>(new OrbitCamera());
   const animationRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
@@ -31,15 +33,38 @@ export function ViewportPanel() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let renderer: Renderer;
+    let renderer: IRenderer;
     try {
-      renderer = new Renderer(canvas);
+      renderer = new Renderer(canvas) as unknown as IRenderer;
     } catch (e) {
-      console.error('Failed to initialize WebGL2 renderer:', e);
+      console.error('Failed to initialize renderer:', e);
       return;
     }
     rendererRef.current = renderer;
     setRenderCanvas(canvas);
+
+    if (isWebGPUAvailable()) {
+      const gpuRenderer = new WebGPURenderer(canvas);
+      gpuRenderer.ready.then(() => {
+        const old = rendererRef.current as any;
+        const gpu = gpuRenderer as any;
+        gpu.cameraPos = old.cameraPos;
+        gpu.cameraTarget = old.cameraTarget;
+        gpu.fov = old.fov;
+        gpu.near = old.near;
+        gpu.far = old.far;
+        gpu.ambient = old.ambient;
+        gpu.showGrid = old.showGrid;
+        gpu.selectedNodeId = old.selectedNodeId;
+        gpu.postExposure = old.postExposure;
+        gpu.postBloomThreshold = old.postBloomThreshold;
+        gpu.postBloomIntensity = old.postBloomIntensity;
+        rendererRef.current = gpuRenderer as unknown as IRenderer;
+        useEditorStore.getState().log('info', 'WebGPU backend activated');
+      }).catch(() => {
+        useEditorStore.getState().log('info', 'Using WebGL2 backend (WebGPU unavailable)');
+      });
+    }
 
     const cam = cameraRef.current;
     cam.distance = 10;

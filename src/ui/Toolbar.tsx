@@ -1,5 +1,6 @@
 import { useEditorStore } from '@core/EditorStore';
 import { FileMenu } from './FileMenu';
+import { getPreferredBackend } from '@renderer/RendererFactory';
 
 export function Toolbar() {
   const isPlaying = useEditorStore((s) => s.isPlaying);
@@ -20,11 +21,13 @@ export function Toolbar() {
   const toggleEditorMode = useEditorStore((s) => s.toggleEditorMode);
   const tickAnimation = useEditorStore((s) => s.tickAnimation);
   const isPlayingAnim = useEditorStore((s) => s.isPlayingAnim);
+  const backend = getPreferredBackend();
   return (
     <div className="main-toolbar">
       <div className="toolbar-group">
         <span className="app-title">NOISE3D</span>
-        <span className="app-version">v9.0.0</span>
+        <span className="app-version">v26.1-08.0.LTS</span>
+        <span className="backend-badge">{backend.toUpperCase()}</span>
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">

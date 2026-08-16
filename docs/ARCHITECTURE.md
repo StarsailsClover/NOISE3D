@@ -56,6 +56,22 @@ The main shader implements Blinn-Phong lighting with:
 - Diffuse term (directional light)
 - Specular term (Blinn-Phong half-vector model)
 
+## Dual-Backend Rendering
+
+NOISE3D supports both WebGL2 and WebGPU rendering backends:
+
+- **WebGL2** (default fallback): GLSL ES 3.00 shaders, compatible with all modern browsers
+- **WebGPU** (preferred when available): WGSL shaders, lower-level GPU access, compute shader support
+
+The `RendererFactory` detects WebGPU availability at runtime. The `ViewportPanel` starts with WebGL2 immediately, then asynchronously upgrades to WebGPU if available. The `IRenderer` interface abstracts both backends.
+
+### WebGPU Notes
+
+- WebGL3 does not exist. WebGPU is the official successor to WebGL (confirmed by Khronos Group).
+- WebGPU is specified by the W3C "GPU for the Web" Community Group.
+- WebGPU maps directly to Vulkan (Linux/Android), Metal (macOS/iOS), and D3D12 (Windows).
+- WGSL (WebGPU Shading Language) replaces GLSL for the WebGPU backend.
+
 ## State Management
 
 The editor uses Zustand for global state. The store holds:

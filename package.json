@@ -1,6 +1,6 @@
 {
   "name": "noise3d",
-  "version": "9.0.0",
+  "version": "26.1.08.0",
   "description": "WebGL-based 3D/2D scene editor inspired by Unity and Blender",
   "type": "module",
   "scripts": {
@@ -25,6 +25,7 @@
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@webgpu/types": "^0.1.71",
     "eslint": "^9.9.1",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",

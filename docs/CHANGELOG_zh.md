@@ -1,6 +1,33 @@
 # 版本历史
 
-## v9.0.0 (2026-08-16) - LTS 发布
+## v26.1-08.0 (2026-08-17) - LTS 发布
+
+### 新增
+- WebGPU 渲染后端 (WGSL 着色器, 完整 PBR 管线)
+- 双后端架构: WebGL2 (回退) + WebGPU (首选)
+- 运行时后端检测和异步升级到 WebGPU
+- 工具栏显示活跃渲染器后端徽章
+- 内嵌脚本编辑器 (JavaScript 沙箱执行)
+- 脚本 API: scene, nodes, lights, log() 全局变量
+- 脚本错误处理和输出面板
+- 代码编辑器 (Run/Reset 按钮和默认 API 文档)
+- 版本控制改革: 日历-语义混合方案 (vYY.MAJOR-MM.MINOR.TYPE)
+- 版本控制策略文档 (VERSIONING.md / VERSIONING_zh.md)
+- @webgpu/types TypeScript WebGPU 类型定义
+
+### 改进
+- RendererFactory (createRendererSync 和 createRendererAsync)
+- WebGPURenderer (ready promise 和 initialized 标志)
+- ViewportPanel 在 WebGPU 失败时优雅回退到 WebGL2
+- IRenderer 接口实现后端无关渲染
+
+### 测试
+- 14 个 Playwright E2E 测试 (WebGPU 和脚本)
+- v1-v9 测试全部通过 (共 126 个测试)
+
+## v26.1-08.0.RC (2026-08-17) - 预发布
+
+## v9.0.0 (2026-08-16) - LTS 发布 (旧版本方案)
 
 ### 新增
 - 动画系统 (关键帧轨道: 位置、旋转、缩放)

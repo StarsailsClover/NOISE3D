@@ -8,6 +8,7 @@ import { AssetPanel } from './panels/AssetPanel';
 import { RenderSettingsPanel } from './panels/RenderSettingsPanel';
 import { TimelinePanel } from './panels/TimelinePanel';
 import { ParticlePanel } from './panels/ParticlePanel';
+import { CodeEditorPanel } from './panels/CodeEditorPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
         <div className="app-right">
           <InspectorPanel />
           <RenderSettingsPanel />
+          <CodeEditorPanel />
         </div>
       </div>
     </div>
