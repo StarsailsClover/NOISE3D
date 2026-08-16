@@ -6,6 +6,8 @@ import { ConsolePanel } from './panels/ConsolePanel';
 import { LightPanel } from './panels/LightPanel';
 import { AssetPanel } from './panels/AssetPanel';
 import { RenderSettingsPanel } from './panels/RenderSettingsPanel';
+import { TimelinePanel } from './panels/TimelinePanel';
+import { ParticlePanel } from './panels/ParticlePanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -18,10 +20,12 @@ export function App() {
         <div className="app-left">
           <HierarchyPanel />
           <LightPanel />
+          <ParticlePanel />
           <AssetPanel />
         </div>
         <div className="app-center">
           <ViewportPanel />
+          <TimelinePanel />
           <ConsolePanel />
         </div>
         <div className="app-right">

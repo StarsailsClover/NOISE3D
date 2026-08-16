@@ -782,3 +782,146 @@
   flex: 1;
   overflow: hidden;
 }
+
+.timeline-panel {
+  border-top: 1px solid var(--border-color);
+  height: 140px;
+  min-height: 80px;
+  flex-shrink: 0;
+}
+
+.timeline-body {
+  padding: 4px 8px;
+}
+
+.timeline-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.timeline-clips {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.clip-btn {
+  padding: 2px 8px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.clip-btn.active {
+  background: var(--bg-active);
+  border-color: var(--accent-blue);
+}
+
+.timeline-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.timeline-slider {
+  flex: 1;
+}
+
+.timeline-time {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.timeline-keyframes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.keyframe-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.keyframe-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.keyframe-btn {
+  padding: 2px 6px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.keyframe-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-blue);
+}
+
+.timeline-track-list {
+  max-height: 40px;
+  overflow-y: auto;
+}
+
+.timeline-track-item {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 1px 0;
+}
+
+.particle-panel {
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  max-height: 30%;
+  overflow: hidden;
+}
+
+.particle-panel .panel-body {
+  overflow-y: auto;
+}
+
+.particle-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.particle-item {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.particle-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+}
+
+.particle-label {
+  font-size: 12px;
+}
+
+.particle-delete {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 11px;
+}

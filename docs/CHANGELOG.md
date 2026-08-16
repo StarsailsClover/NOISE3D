@@ -1,5 +1,30 @@
 # Version History
 
+## v9.0.0 (2026-08-16) - LTS Release
+
+### Added
+- Animation system with keyframe tracks (position, rotation, scale)
+- Animation clip creation and management
+- Timeline panel with play/pause and time scrubber
+- Keyframe insertion at current time for selected node
+- Animation playback with looping and linear interpolation
+- Particle system with emission rate, lifetime, speed, gravity
+- Particle panel UI with per-emitter controls
+- Particle simulation (spawn, update, color/size interpolation)
+- 2D/3D editor mode toggle in toolbar
+- Play button drives animation ticking and particle updates
+
+### Improved
+- Store manages animation clips, particle emitters, editor mode
+- Timeline shows track list with keyframe counts
+- Multiple clips can be created and switched
+
+### Tested
+- 18 Playwright E2E tests for animation, particles, and 2D mode
+- All v1-v8 tests still passing (112 tests total)
+
+## v9.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v8.0.0 (2026-08-16) - LTS Release
 
 ### Added

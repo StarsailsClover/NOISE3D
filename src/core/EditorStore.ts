@@ -3,6 +3,10 @@ import { Scene, PrimitiveType } from '@scene/Scene';
 import { Vec3 } from '@math/Vec';
 import type { Light, LightType } from '@scene/Light';
 import { createDirectionalLight, createPointLight, createSpotLight } from '@scene/Light';
+import type { ParticleEmitter } from '@scene/ParticleSystem';
+import { createParticleEmitter, updateParticleEmitter } from '@scene/ParticleSystem';
+import type { AnimationClip } from '@scene/Animation';
+import { createAnimationClip, addKeyframe, sampleAnimation } from '@scene/Animation';
 import type { Material } from '@renderer/Material';
 import { createDefaultMaterial } from '@renderer/Material';
 import { SceneSerializer } from './SceneSerializer';
@@ -75,6 +79,22 @@ export interface EditorState {
   setPostSetting: (key: string, value: number) => void;
   renderCanvas: HTMLCanvasElement | null;
   setRenderCanvas: (canvas: HTMLCanvasElement | null) => void;
+  editorMode: '3D' | '2D';
+  toggleEditorMode: () => void;
+  particleEmitters: ParticleEmitter[];
+  addParticleEmitter: () => void;
+  removeParticleEmitter: (id: number) => void;
+  updateParticleEmitter: (id: number, partial: Partial<ParticleEmitter>) => void;
+  animationClips: AnimationClip[];
+  selectedClipId: number | null;
+  currentTime: number;
+  isPlayingAnim: boolean;
+  addAnimationClip: () => void;
+  addKeyframeAtCurrent: (nodeId: number, property: 'position' | 'rotation' | 'scale') => void;
+  setSelectedClip: (id: number | null) => void;
+  setCurrentTime: (time: number) => void;
+  toggleAnimPlay: () => void;
+  tickAnimation: (dt: number) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -101,6 +121,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   postBloomThreshold: 1.0,
   postBloomIntensity: 0.3,
   renderCanvas: null,
+  editorMode: '3D' as '3D' | '2D',
+  particleEmitters: [],
+  animationClips: [],
+  selectedClipId: null,
+  currentTime: 0,
+  isPlayingAnim: false,
 
   addPrimitive: (type, parentId) => {
     const state = get();
@@ -384,4 +410,79 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   setRenderCanvas: (canvas) => set({ renderCanvas: canvas }),
+
+  toggleEditorMode: () =>
+    set((s) => ({ editorMode: s.editorMode === '3D' ? '2D' : '3D' })),
+
+  addParticleEmitter: () => {
+    const emitter = createParticleEmitter();
+    set((s) => ({ particleEmitters: [...s.particleEmitters, emitter] }));
+    get().log('info', `Created particle system: ${emitter.name}`);
+  },
+
+  removeParticleEmitter: (id) => {
+    set((s) => ({ particleEmitters: s.particleEmitters.filter((e) => e.id !== id) }));
+    get().log('info', `Removed particle system ${id}`);
+  },
+
+  updateParticleEmitter: (id, partial) => {
+    set((s) => ({
+      particleEmitters: s.particleEmitters.map((e) =>
+        e.id === id ? { ...e, ...partial } : e,
+      ),
+    }));
+  },
+
+  addAnimationClip: () => {
+    const clip = createAnimationClip();
+    set((s) => ({ animationClips: [...s.animationClips, clip], selectedClipId: clip.id }));
+    get().log('info', `Created animation clip: ${clip.name}`);
+  },
+
+  addKeyframeAtCurrent: (nodeId, property) => {
+    const state = get();
+    if (state.selectedClipId === null) return;
+    const clip = state.animationClips.find((c) => c.id === state.selectedClipId);
+    if (!clip) return;
+    const node = state.scene.getNode(nodeId);
+    if (!node) return;
+    const value = property === 'position' ? node.position : property === 'rotation' ? node.rotation : node.scale;
+    addKeyframe(clip, nodeId, property, state.currentTime, value.clone());
+    set({ animationClips: [...state.animationClips] });
+    get().log('info', `Keyframe added at ${state.currentTime.toFixed(2)}s`);
+  },
+
+  setSelectedClip: (id) => set({ selectedClipId: id }),
+
+  setCurrentTime: (time) => set({ currentTime: time }),
+
+  toggleAnimPlay: () => set((s) => ({ isPlayingAnim: !s.isPlayingAnim })),
+
+  tickAnimation: (dt) => {
+    const state = get();
+    if (!state.isPlayingAnim || state.selectedClipId === null) return;
+    const clip = state.animationClips.find((c) => c.id === state.selectedClipId);
+    if (!clip) return;
+    const newTime = state.currentTime + dt;
+    const wrappedTime = clip.loop ? newTime % clip.duration : Math.min(newTime, clip.duration);
+    set({ currentTime: wrappedTime });
+
+    for (const track of clip.tracks) {
+      const sampled = sampleAnimation(clip, wrappedTime, track.nodeId, track.propertyName);
+      if (sampled) {
+        const node = state.scene.getNode(track.nodeId);
+        if (node) {
+          if (track.propertyName === 'position') node.position.copy(sampled);
+          else if (track.propertyName === 'rotation') node.rotation.copy(sampled);
+          else node.scale.copy(sampled);
+        }
+      }
+    }
+
+    for (const emitter of state.particleEmitters) {
+      updateParticleEmitter(emitter, dt);
+    }
+
+    set({ scene: state.scene, particleEmitters: [...state.particleEmitters] });
+  },
 }));

@@ -16,11 +16,15 @@ export function Toolbar() {
   const duplicateNode = useEditorStore((s) => s.duplicateNode);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   void undoRevision;
+  const editorMode = useEditorStore((s) => s.editorMode);
+  const toggleEditorMode = useEditorStore((s) => s.toggleEditorMode);
+  const tickAnimation = useEditorStore((s) => s.tickAnimation);
+  const isPlayingAnim = useEditorStore((s) => s.isPlayingAnim);
   return (
     <div className="main-toolbar">
       <div className="toolbar-group">
         <span className="app-title">NOISE3D</span>
-        <span className="app-version">v8.0.0</span>
+        <span className="app-version">v9.0.0</span>
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
@@ -40,8 +44,33 @@ export function Toolbar() {
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
+        <button
+          className={`toolbar-btn ${editorMode === '2D' ? 'active' : ''}`}
+          onClick={toggleEditorMode}
+          title="Toggle 2D/3D Mode"
+        >
+          {editorMode}
+        </button>
         <button className={`toolbar-btn ${showGrid ? 'active' : ''}`} onClick={toggleGrid}>Grid</button>
-        <button className={`toolbar-btn ${isPlaying ? 'active' : ''}`} onClick={togglePlay}>
+        <button
+          className={`toolbar-btn ${isPlaying ? 'active' : ''}`}
+          onClick={() => {
+            togglePlay();
+            if (!isPlaying) {
+              let lastTime = performance.now();
+              const loop = () => {
+                const now = performance.now();
+                const dt = (now - lastTime) / 1000;
+                lastTime = now;
+                tickAnimation(dt);
+                if (useEditorStore.getState().isPlaying) {
+                  requestAnimationFrame(loop);
+                }
+              };
+              if (isPlayingAnim) requestAnimationFrame(loop);
+            }
+          }}
+        >
           {isPlaying ? 'Stop' : 'Play'}
         </button>
       </div>
