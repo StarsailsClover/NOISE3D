@@ -7,8 +7,11 @@ import type { Material } from '@renderer/Material';
 import { createDefaultMaterial } from '@renderer/Material';
 import { SceneSerializer } from './SceneSerializer';
 import { UndoManager } from './UndoManager';
+import { AssetManager, type Asset } from './AssetManager';
+import { OBJParser } from '@renderer/OBJParser';
 
 const undoManager = new UndoManager();
+const assetManager = new AssetManager();
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
@@ -58,6 +61,10 @@ export interface EditorState {
   moveNode: (id: number, newParentId: number) => void;
   takeSnapshot: () => void;
   undoRevision: number;
+  assets: Asset[];
+  importOBJ: (file: File) => void;
+  importTexture: (file: File) => void;
+  addCustomMeshNode: (meshAssetId: string, name: string) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -79,6 +86,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   frameSelectedTrigger: 0,
   sceneName: 'Untitled',
   undoRevision: 0,
+  assets: [],
 
   addPrimitive: (type, parentId) => {
     const state = get();
@@ -304,5 +312,36 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     state.scene.moveNode(id, newParentId);
     set({ scene: state.scene, undoRevision: get().undoRevision + 1 });
     get().log('info', `Moved node ${id} to parent ${newParentId}`);
+  },
+
+  importOBJ: async (file) => {
+    try {
+      const text = await file.text();
+      const mesh = OBJParser.parse(text);
+      const id = `mesh_${Date.now()}`;
+      assetManager.addMesh(id, file.name.replace(/\.obj$/i, ''), mesh);
+      set({ assets: assetManager.getAssets() });
+      get().log('info', `Imported OBJ: ${file.name}`);
+    } catch (e) {
+      get().log('error', `Failed to import OBJ: ${e}`);
+    }
+  },
+
+  importTexture: (file) => {
+    const id = `tex_${Date.now()}`;
+    const url = URL.createObjectURL(file);
+    assetManager.addTexture(id, file.name, url);
+    set({ assets: assetManager.getAssets() });
+    get().log('info', `Imported texture: ${file.name}`);
+  },
+
+  addCustomMeshNode: (meshAssetId, name) => {
+    const state = get();
+    state.takeSnapshot();
+    const node = state.scene.createPrimitive('custom', name);
+    node.meshAssetId = meshAssetId;
+    state.materials.set(node.id, createDefaultMaterial());
+    set({ selectedNodeId: node.id, undoRevision: get().undoRevision + 1 });
+    get().log('info', `Added custom mesh: ${name}`);
   },
 }));

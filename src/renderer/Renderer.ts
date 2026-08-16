@@ -33,6 +33,7 @@ export class Renderer {
   private lineProgram: WebGLProgram | null = null;
   public wireframeShader: WebGLProgram | null = null;
   private meshCache: Map<string, GLMesh> = new Map();
+  private customMeshes: Map<string, MeshData> = new Map();
   private gridBuffers: GridBuffers | null = null;
   private textures: Map<string, WebGLTexture> = new Map();
 
@@ -136,35 +137,40 @@ export class Renderer {
     this.gridBuffers = { vao, vertexCount: lines.length / 3 };
   }
 
-  private getMeshForType(type: string): GLMesh | null {
-    if (this.meshCache.has(type)) {
-      return this.meshCache.get(type)!;
+  private getMeshForType(type: string, meshAssetId?: string | null): GLMesh | null {
+    const cacheKey = meshAssetId ? `custom:${meshAssetId}` : type;
+    if (this.meshCache.has(cacheKey)) {
+      return this.meshCache.get(cacheKey)!;
     }
 
     let mesh: MeshData;
-    switch (type) {
-      case 'cube':
-        mesh = GeometryGenerator.createCube();
-        break;
-      case 'sphere':
-        mesh = GeometryGenerator.createSphere();
-        break;
-      case 'plane':
-        mesh = GeometryGenerator.createPlane();
-        break;
-      case 'cylinder':
-        mesh = GeometryGenerator.createCylinder();
-        break;
-      case 'cone':
-        mesh = GeometryGenerator.createCone();
-        break;
-      default:
-        return null;
+    if (meshAssetId && this.customMeshes.has(meshAssetId)) {
+      mesh = this.customMeshes.get(meshAssetId)!;
+    } else {
+      switch (type) {
+        case 'cube':
+          mesh = GeometryGenerator.createCube();
+          break;
+        case 'sphere':
+          mesh = GeometryGenerator.createSphere();
+          break;
+        case 'plane':
+          mesh = GeometryGenerator.createPlane();
+          break;
+        case 'cylinder':
+          mesh = GeometryGenerator.createCylinder();
+          break;
+        case 'cone':
+          mesh = GeometryGenerator.createCone();
+          break;
+        default:
+          return null;
+      }
     }
 
     const glMesh = this.uploadMesh(mesh);
     if (glMesh) {
-      this.meshCache.set(type, glMesh);
+      this.meshCache.set(cacheKey, glMesh);
     }
     return glMesh;
   }
@@ -213,6 +219,10 @@ export class Renderer {
 
   getMaterial(nodeId: number): Material {
     return this.materials.get(nodeId) ?? createDefaultMaterial();
+  }
+
+  uploadCustomMesh(id: string, mesh: MeshData): void {
+    this.customMeshes.set(id, mesh);
   }
 
   loadTextureFromImage(textureId: string, image: HTMLImageElement): void {
@@ -353,7 +363,7 @@ export class Renderer {
 
       for (const node of scene.getAllNodes()) {
         if (!node.visible) continue;
-        const mesh = this.getMeshForType(node.type);
+        const mesh = this.getMeshForType(node.type, node.meshAssetId);
         if (!mesh) continue;
 
         const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
@@ -395,7 +405,7 @@ export class Renderer {
     if (this.selectedNodeId !== null && this.wireframeShader) {
       const node = scene.getNode(this.selectedNodeId);
       if (node && node.visible) {
-        const mesh = this.getMeshForType(node.type);
+        const mesh = this.getMeshForType(node.type, node.meshAssetId);
         if (mesh) {
           gl.useProgram(this.wireframeShader);
           gl.disable(gl.DEPTH_TEST);

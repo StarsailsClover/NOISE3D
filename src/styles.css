@@ -708,3 +708,62 @@
   color: var(--text-secondary);
   font-style: italic;
 }
+
+.asset-panel {
+  background: var(--bg-dark);
+  flex-shrink: 0;
+  max-height: 30%;
+  overflow: hidden;
+  border-top: 1px solid var(--border-color);
+}
+
+.asset-panel .panel-body {
+  overflow-y: auto;
+}
+
+.asset-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.asset-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s;
+}
+
+.asset-item:hover {
+  background: var(--bg-hover);
+}
+
+.asset-type-icon {
+  display: inline-block;
+  width: 36px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 0;
+  border-radius: 2px;
+  color: #000;
+}
+
+.asset-type-icon.asset-mesh {
+  background: #44dd88;
+}
+
+.asset-type-icon.asset-texture {
+  background: #dd8844;
+}
+
+.asset-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,14 +1,15 @@
 import { Vec3 } from '@math/Vec';
 
 let nextId = 1;
-
 export type PrimitiveType =
   | 'cube'
   | 'sphere'
   | 'plane'
   | 'cylinder'
   | 'cone'
-  | 'empty';
+  | 'empty'
+  | 'custom';
+
 export class SceneNode {
   id: number;
   name: string;
@@ -19,6 +20,8 @@ export class SceneNode {
   visible: boolean;
   parentId: number | null;
   childIds: number[];
+  meshAssetId: string | null;
+  textureAssetId: string | null;
 
   constructor(
     name: string,
@@ -36,6 +39,8 @@ export class SceneNode {
     this.visible = true;
     this.parentId = null;
     this.childIds = [];
+    this.meshAssetId = null;
+    this.textureAssetId = null;
   }
 
   clone(): SceneNode {
@@ -55,6 +60,8 @@ export class SceneNode {
       visible: this.visible,
       parentId: this.parentId,
       childIds: [...this.childIds],
+      meshAssetId: this.meshAssetId,
+      textureAssetId: this.textureAssetId,
     };
   }
 }

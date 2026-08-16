@@ -4,6 +4,7 @@ import { HierarchyPanel } from './panels/HierarchyPanel';
 import { InspectorPanel } from './panels/InspectorPanel';
 import { ConsolePanel } from './panels/ConsolePanel';
 import { LightPanel } from './panels/LightPanel';
+import { AssetPanel } from './panels/AssetPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
         <div className="app-left">
           <HierarchyPanel />
           <LightPanel />
+          <AssetPanel />
         </div>
         <div className="app-center">
           <ViewportPanel />

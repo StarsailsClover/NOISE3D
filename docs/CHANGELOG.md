@@ -1,5 +1,29 @@
 # Version History
 
+## v7.0.0 (2026-08-16) - LTS Release
+
+### Added
+- OBJ mesh file parser (vertices, normals, UVs, faces with triangulation)
+- Asset management system (AssetManager class)
+- Asset panel UI with mesh and texture listing
+- OBJ import via file dialog
+- Texture import via file dialog
+- Custom mesh node type ('custom') with mesh asset binding
+- Double-click asset to add custom mesh to scene
+- Custom mesh upload to WebGL renderer (uploadCustomMesh)
+- SceneNode extended with meshAssetId and textureAssetId
+
+### Improved
+- Renderer supports custom mesh rendering alongside primitives
+- Mesh cache keys now distinguish custom vs primitive meshes
+- OBJ parser handles v/vn/vt/f commands and quad-to-triangle fan triangulation
+
+### Tested
+- 12 Playwright E2E tests for asset management
+- All v1-v6 tests still passing (81 tests total)
+
+## v7.0.0-rc.1 (2026-08-16) - Pre-Release
+
 ## v6.0.0 (2026-08-16) - LTS Release
 
 ### Added
