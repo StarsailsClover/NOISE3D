@@ -19,12 +19,15 @@ const undoManager = new UndoManager();
 const assetManager = new AssetManager();
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
+export type SceneViewMode = 'material' | 'wireframe' | 'solid' | 'rendered';
 
 export interface EditorState {
   scene: Scene;
   selectedNodeId: number | null;
+  selectedNodeIds: number[];
   selectedLightId: number | null;
   showGrid: boolean;
+  sceneViewMode: SceneViewMode;
   cameraPos: Vec3;
   cameraTarget: Vec3;
   materials: Map<number, Material>;
@@ -36,7 +39,12 @@ export interface EditorState {
 
   addPrimitive: (type: PrimitiveType, parentId?: number | null) => void;
   selectNode: (id: number | null) => void;
+  selectNodeMulti: (id: number, additive: boolean) => void;
+  selectAllNodes: () => void;
+  deselectAll: () => void;
   removeNode: (id: number) => void;
+  removeSelectedNodes: () => void;
+  duplicateSelectedNodes: () => void;
   updateNodeTransform: (id: number, position?: Vec3, rotation?: Vec3, scale?: Vec3) => void;
   renameNode: (id: number, name: string) => void;
   setMaterial: (id: number, material: Partial<Material>) => void;
@@ -47,6 +55,7 @@ export interface EditorState {
   log: (level: 'info' | 'warn' | 'error', text: string) => void;
   clearConsole: () => void;
   setGizmoMode: (mode: GizmoMode) => void;
+  setSceneViewMode: (mode: SceneViewMode) => void;
   frameSelected: () => void;
   addLight: (type: LightType) => void;
   removeLight: (id: number) => void;
@@ -106,8 +115,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return s;
   })(),
   selectedNodeId: null,
+  selectedNodeIds: [],
   selectedLightId: null,
   showGrid: true,
+  sceneViewMode: 'material' as SceneViewMode,
   cameraPos: new Vec3(5, 5, 5),
   cameraTarget: new Vec3(0, 0, 0),
   materials: new Map(),
@@ -142,7 +153,34 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   selectNode: (id) => {
-    set({ selectedNodeId: id });
+    set({ selectedNodeId: id, selectedNodeIds: id !== null ? [id] : [] });
+  },
+
+  selectNodeMulti: (id, additive) => {
+    const state = get();
+    if (additive) {
+      const ids = state.selectedNodeIds.includes(id)
+        ? state.selectedNodeIds.filter((x) => x !== id)
+        : [...state.selectedNodeIds, id];
+      set({
+        selectedNodeIds: ids,
+        selectedNodeId: ids.length > 0 ? ids[ids.length - 1] : null,
+      });
+    } else {
+      set({ selectedNodeIds: [id], selectedNodeId: id });
+    }
+  },
+
+  selectAllNodes: () => {
+    const state = get();
+    const allIds = state.scene.getAllNodes()
+      .filter((n) => n.id !== 0 && n.visible && n.type !== 'empty')
+      .map((n) => n.id);
+    set({ selectedNodeIds: allIds, selectedNodeId: allIds.length > 0 ? allIds[0] : null });
+  },
+
+  deselectAll: () => {
+    set({ selectedNodeIds: [], selectedNodeId: null });
   },
 
   removeNode: (id) => {
@@ -150,12 +188,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     state.takeSnapshot();
     state.scene.removeNode(id);
     state.materials.delete(id);
+    const newSelectedIds = state.selectedNodeIds.filter((x) => x !== id);
     if (state.selectedNodeId === id) {
-      set({ selectedNodeId: null, undoRevision: get().undoRevision + 1 });
+      set({ selectedNodeId: null, selectedNodeIds: newSelectedIds, undoRevision: get().undoRevision + 1 });
     } else {
-      set({ undoRevision: get().undoRevision + 1 });
+      set({ selectedNodeIds: newSelectedIds, undoRevision: get().undoRevision + 1 });
     }
     get().log('info', `Removed node ${id}`);
+  },
+
+  removeSelectedNodes: () => {
+    const state = get();
+    if (state.selectedNodeIds.length === 0) return;
+    state.takeSnapshot();
+    for (const id of state.selectedNodeIds) {
+      state.scene.removeNode(id);
+      state.materials.delete(id);
+    }
+    set({ selectedNodeId: null, selectedNodeIds: [], undoRevision: get().undoRevision + 1 });
+    get().log('info', `Removed ${state.selectedNodeIds.length} nodes`);
+  },
+
+  duplicateSelectedNodes: () => {
+    const state = get();
+    if (state.selectedNodeIds.length === 0) return;
+    state.takeSnapshot();
+    const newIds: number[] = [];
+    for (const id of state.selectedNodeIds) {
+      const node = state.scene.getNode(id);
+      if (!node) continue;
+      const clone = node.clone();
+      clone.name = `${node.name} Copy`;
+      state.scene.addNode(clone, node.parentId);
+      const mat = state.materials.get(id);
+      if (mat) {
+        state.materials.set(clone.id, { ...mat, baseColor: mat.baseColor.clone(), emissive: mat.emissive.clone() });
+      }
+      newIds.push(clone.id);
+    }
+    set({ selectedNodeIds: newIds, selectedNodeId: newIds[0] ?? null, undoRevision: get().undoRevision + 1 });
+    get().log('info', `Duplicated ${newIds.length} nodes`);
   },
 
   updateNodeTransform: (id, position, rotation, scale) => {
@@ -198,6 +270,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   clearConsole: () => set({ consoleMessages: [] }),
 
   setGizmoMode: (mode) => set({ gizmoMode: mode }),
+
+  setSceneViewMode: (mode) => set({ sceneViewMode: mode }),
 
   frameSelected: () =>
     set((s) => ({ frameSelectedTrigger: s.frameSelectedTrigger + 1 })),

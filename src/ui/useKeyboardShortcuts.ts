@@ -38,6 +38,11 @@ export function useKeyboardShortcuts() {
           toggleGrid();
           return;
         }
+        if (e.key === 'a') {
+          e.preventDefault();
+          useEditorStore.getState().selectAllNodes();
+          return;
+        }
       }
 
       switch (e.key.toLowerCase()) {

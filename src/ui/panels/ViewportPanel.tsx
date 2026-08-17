@@ -29,13 +29,14 @@ export function ViewportPanel() {
   const showGrid = useEditorStore((s) => s.showGrid);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const materials = useEditorStore((s) => s.materials);
-  const selectNode = useEditorStore((s) => s.selectNode);
   const frameSelectedTrigger = useEditorStore((s) => s.frameSelectedTrigger);
   const setRenderCanvas = useEditorStore((s) => s.setRenderCanvas);
   const postExposure = useEditorStore((s) => s.postExposure);
   const postBloomThreshold = useEditorStore((s) => s.postBloomThreshold);
   const postBloomIntensity = useEditorStore((s) => s.postBloomIntensity);
   const cameraState = useEditorStore((s) => s.cameraState);
+  const selectNodeMulti = useEditorStore((s) => s.selectNodeMulti);
+  const boxSelectStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -100,6 +101,7 @@ export function ViewportPanel() {
       const r = rendererRef.current;
       const store = useEditorStore.getState();
       r.showGrid = store.showGrid;
+      (r as any).sceneViewMode = store.sceneViewMode;
       r.cameraPos = cam.position;
       r.cameraTarget = cam.target;
       r.selectedNodeId = store.selectedNodeId;
@@ -231,7 +233,8 @@ export function ViewportPanel() {
         }
 
         dragModeRef.current = 'none';
-        pickObject(x, y, rect.width, rect.height);
+        boxSelectStartRef.current = { x, y };
+        pickObject(x, y, rect.width, rect.height, e.shiftKey);
       } else if (e.button === 1 || e.button === 2) {
         dragModeRef.current = e.button === 1 ? 'pan' : 'rotate';
         e.preventDefault();
@@ -391,7 +394,7 @@ export function ViewportPanel() {
   }, []);
 
   const pickObject = useCallback(
-    (screenX: number, screenY: number, width: number, height: number) => {
+    (screenX: number, screenY: number, width: number, height: number, additive: boolean = false) => {
       const r = rendererRef.current;
       if (!r) return;
       const cam = cameraRef.current;
@@ -422,9 +425,13 @@ export function ViewportPanel() {
         }
       }
 
-      selectNode(closestId);
+      if (closestId !== null) {
+        selectNodeMulti(closestId, additive);
+      } else if (!additive) {
+        useEditorStore.getState().deselectAll();
+      }
     },
-    [scene, selectNode],
+    [scene, selectNodeMulti],
   );
 
   return (
@@ -442,6 +449,7 @@ export function ViewportPanel() {
       <ViewportToolbar />
       <ViewportGizmoControls />
       <ViewportCameraControls cameraRef={cameraRef} />
+      <ViewportViewModeControls />
     </div>
   );
 }
@@ -514,6 +522,44 @@ function ViewportGizmoControls() {
         title="Scale (R)"
       >
         Scale
+      </button>
+    </div>
+  );
+}
+
+function ViewportViewModeControls() {
+  const sceneViewMode = useEditorStore((s) => s.sceneViewMode);
+  const setSceneViewMode = useEditorStore((s) => s.setSceneViewMode);
+
+  return (
+    <div className="viewport-viewmode-controls">
+      <button
+        className={`cam-btn ${sceneViewMode === 'material' ? 'active' : ''}`}
+        onClick={() => setSceneViewMode('material')}
+        title="Material Preview"
+      >
+        MAT
+      </button>
+      <button
+        className={`cam-btn ${sceneViewMode === 'wireframe' ? 'active' : ''}`}
+        onClick={() => setSceneViewMode('wireframe')}
+        title="Wireframe"
+      >
+        WIRE
+      </button>
+      <button
+        className={`cam-btn ${sceneViewMode === 'solid' ? 'active' : ''}`}
+        onClick={() => setSceneViewMode('solid')}
+        title="Solid (Unlit)"
+      >
+        SOLID
+      </button>
+      <button
+        className={`cam-btn ${sceneViewMode === 'rendered' ? 'active' : ''}`}
+        onClick={() => setSceneViewMode('rendered')}
+        title="Rendered"
+      >
+        REND
       </button>
     </div>
   );
