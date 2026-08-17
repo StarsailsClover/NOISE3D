@@ -13,6 +13,16 @@ export interface SerializedScene {
   ambient: [number, number, number];
   materials: SerializedMaterial[];
   nextNodeId: number;
+  camera?: SerializedCamera;
+}
+
+interface SerializedCamera {
+  target: [number, number, number];
+  distance: number;
+  azimuth: number;
+  elevation: number;
+  projectionMode: string;
+  orthoZoom: number;
 }
 
 interface SerializedNode {
@@ -62,6 +72,7 @@ export class SceneSerializer {
     scene: Scene,
     materials: Map<number, Material>,
     name: string = 'Untitled',
+    cameraState?: object,
   ): string {
     const nodes: SerializedNode[] = scene.getAllNodes().map((n) => ({
       id: n.id,
@@ -114,12 +125,13 @@ export class SceneSerializer {
       ambient: [...scene.ambientColor] as [number, number, number],
       materials: serializedMaterials,
       nextNodeId: getNextNodeId(),
+      camera: cameraState as SerializedCamera | undefined,
     };
 
     return JSON.stringify(data, null, 2);
   }
 
-  static deserialize(json: string): { scene: Scene; materials: Map<number, Material>; name: string } {
+  static deserialize(json: string): { scene: Scene; materials: Map<number, Material>; name: string; camera?: SerializedCamera } {
     const data = JSON.parse(json) as SerializedScene;
 
     const scene = new Scene();
@@ -181,15 +193,15 @@ export class SceneSerializer {
       materials.set(sm.nodeId, mat);
     }
 
-    return { scene, materials, name: data.name };
+    return { scene, materials, name: data.name, camera: data.camera };
   }
 
-  static saveToLocal(scene: Scene, materials: Map<number, Material>, name: string): void {
-    const json = SceneSerializer.serialize(scene, materials, name);
+  static saveToLocal(scene: Scene, materials: Map<number, Material>, name: string, cameraState?: object): void {
+    const json = SceneSerializer.serialize(scene, materials, name, cameraState);
     localStorage.setItem(`noise3d:scene:${name}`, json);
   }
 
-  static loadFromLocal(name: string): { scene: Scene; materials: Map<number, Material>; name: string } | null {
+  static loadFromLocal(name: string): { scene: Scene; materials: Map<number, Material>; name: string; camera?: SerializedCamera } | null {
     const json = localStorage.getItem(`noise3d:scene:${name}`);
     if (!json) return null;
     return SceneSerializer.deserialize(json);
@@ -210,8 +222,8 @@ export class SceneSerializer {
     localStorage.removeItem(`noise3d:scene:${name}`);
   }
 
-  static download(scene: Scene, materials: Map<number, Material>, name: string): void {
-    const json = SceneSerializer.serialize(scene, materials, name);
+  static download(scene: Scene, materials: Map<number, Material>, name: string, cameraState?: object): void {
+    const json = SceneSerializer.serialize(scene, materials, name, cameraState);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -221,7 +233,7 @@ export class SceneSerializer {
     URL.revokeObjectURL(url);
   }
 
-  static async loadFromFile(file: File): Promise<{ scene: Scene; materials: Map<number, Material>; name: string }> {
+  static async loadFromFile(file: File): Promise<{ scene: Scene; materials: Map<number, Material>; name: string; camera?: SerializedCamera }> {
     const text = await file.text();
     return SceneSerializer.deserialize(text);
   }

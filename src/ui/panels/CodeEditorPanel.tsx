@@ -28,7 +28,6 @@ export function CodeEditorPanel() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scene = useEditorStore((s) => s.scene);
   const log = useEditorStore((s) => s.log);
-  const set = useEditorStore.setState;
 
   const runScript = () => {
     setOutput('');

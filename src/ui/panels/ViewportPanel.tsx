@@ -8,6 +8,7 @@ import { OrbitCamera } from '@engine/OrbitCamera';
 import { Ray } from '@engine/Ray';
 import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
+import { ViewportCameraControls } from './ViewportCameraControls';
 
 export function ViewportPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,6 +29,7 @@ export function ViewportPanel() {
   const postExposure = useEditorStore((s) => s.postExposure);
   const postBloomThreshold = useEditorStore((s) => s.postBloomThreshold);
   const postBloomIntensity = useEditorStore((s) => s.postBloomIntensity);
+  const cameraState = useEditorStore((s) => s.cameraState);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -84,18 +86,28 @@ export function ViewportPanel() {
     const renderLoop = () => {
       if (!rendererRef.current) return;
       const r = rendererRef.current;
-      r.showGrid = showGrid;
+      const store = useEditorStore.getState();
+      r.showGrid = store.showGrid;
       r.cameraPos = cam.position;
       r.cameraTarget = cam.target;
-      r.selectedNodeId = selectedNodeId;
+      r.selectedNodeId = store.selectedNodeId;
 
-      for (const [id, mat] of materials) {
+      for (const [id, mat] of store.materials) {
         r.setMaterial(id, mat);
       }
 
-      r.render(scene as Scene, canvas.width, canvas.height);
+      r.render(store.scene as Scene, canvas.width, canvas.height);
+
+      // Sync camera state to store periodically for save/serialization
+      syncCount++;
+      if (syncCount >= 30) {
+        syncCount = 0;
+        store.setCameraState(cam.serialize());
+      }
+
       animationRef.current = requestAnimationFrame(renderLoop);
     };
+    let syncCount = 0;
     animationRef.current = requestAnimationFrame(renderLoop);
 
     return () => {
@@ -143,6 +155,12 @@ export function ViewportPanel() {
       cam.frame(new Vec3(0, 0, 0), 2);
     }
   }, [frameSelectedTrigger, selectedNodeId, scene]);
+
+  // Restore camera state when loaded from scene file
+  useEffect(() => {
+    if (!cameraState) return;
+    cameraRef.current.deserialize(cameraState);
+  }, [cameraState]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -194,12 +212,61 @@ export function ViewportPanel() {
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     const cam = cameraRef.current;
-    cam.zoom(e.deltaY);
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    cam.zoomToCursor(e.deltaY, x, y, rect.width, rect.height);
   }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+  }, []);
+
+  // Numpad camera shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      const cam = cameraRef.current;
+      if (!cam) return;
+
+      // Numpad 1: Front
+      if (e.code === 'Numpad1') {
+        e.preventDefault();
+        cam.setView('front');
+        return;
+      }
+      // Numpad 3: Right
+      if (e.code === 'Numpad3') {
+        e.preventDefault();
+        cam.setView('right');
+        return;
+      }
+      // Numpad 7: Top
+      if (e.code === 'Numpad7') {
+        e.preventDefault();
+        cam.setView('top');
+        return;
+      }
+      // Numpad 5: Toggle ortho/perspective
+      if (e.code === 'Numpad5') {
+        e.preventDefault();
+        cam.toggleProjection();
+        return;
+      }
+      // Numpad . : Frame selected
+      if (e.code === 'NumpadDecimal') {
+        e.preventDefault();
+        useEditorStore.getState().frameSelected();
+        return;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   const pickObject = useCallback(
@@ -253,6 +320,7 @@ export function ViewportPanel() {
       />
       <ViewportToolbar />
       <ViewportGizmoControls />
+      <ViewportCameraControls cameraRef={cameraRef} />
     </div>
   );
 }

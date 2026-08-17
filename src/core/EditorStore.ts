@@ -95,6 +95,8 @@ export interface EditorState {
   setCurrentTime: (time: number) => void;
   toggleAnimPlay: () => void;
   tickAnimation: (dt: number) => void;
+  cameraState: object | null;
+  setCameraState: (state: object | null) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -127,6 +129,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedClipId: null,
   currentTime: 0,
   isPlayingAnim: false,
+  cameraState: null,
+  setCameraState: (state) => set({ cameraState: state }),
 
   addPrimitive: (type, parentId) => {
     const state = get();
@@ -234,7 +238,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   saveScene: (name) => {
     const state = get();
-    SceneSerializer.saveToLocal(state.scene, state.materials, name);
+    SceneSerializer.saveToLocal(state.scene, state.materials, name, state.cameraState ?? undefined);
     set({ sceneName: name });
     get().log('info', `Scene saved: ${name}`);
   },
@@ -251,13 +255,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedNodeId: null,
       selectedLightId: null,
       sceneName: result.name,
+      cameraState: result.camera ?? null,
     });
     get().log('info', `Scene loaded: ${name}`);
   },
 
   downloadScene: (name) => {
     const state = get();
-    SceneSerializer.download(state.scene, state.materials, name);
+    SceneSerializer.download(state.scene, state.materials, name, state.cameraState ?? undefined);
     get().log('info', `Scene downloaded: ${name}`);
   },
 
@@ -270,6 +275,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         selectedNodeId: null,
         selectedLightId: null,
         sceneName: result.name,
+        cameraState: result.camera ?? null,
       });
       get().log('info', `Scene loaded from file: ${file.name}`);
     } catch (e) {

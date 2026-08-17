@@ -1,5 +1,7 @@
 # Version History
 
+## v26.1-09.0.RC (2026-08-18) - Pre-Release
+
 ## v26.1-08.0 (2026-08-17) - LTS Release
 
 ### Added
