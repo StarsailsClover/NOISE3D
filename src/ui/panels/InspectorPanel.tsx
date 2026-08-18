@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { Vec3, Color } from '@math/Vec';
 import { MATERIAL_PRESETS } from '@renderer/Material';
+import { BUILTIN_COMPONENT_TYPES, getComponentDisplayName, getComponentPropertyLabels, type ComponentData } from '@scene/Component';
 
 export function InspectorPanel() {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
@@ -9,6 +11,12 @@ export function InspectorPanel() {
   const renameNode = useEditorStore((s) => s.renameNode);
   const setMaterial = useEditorStore((s) => s.setMaterial);
   const materials = useEditorStore((s) => s.materials);
+  const addComponent = useEditorStore((s) => s.addComponent);
+  const removeComponent = useEditorStore((s) => s.removeComponent);
+  const updateComponent = useEditorStore((s) => s.updateComponent);
+  const createPrefabFromNode = useEditorStore((s) => s.createPrefabFromNode);
+  const [componentSelectKey, setComponentSelectKey] = useState(0);
+  const componentsRevision = useEditorStore((s) => s.components);
 
   if (selectedNodeId === null) {
     return (
@@ -370,6 +378,121 @@ export function InspectorPanel() {
             </div>
           </>
         )}
+
+        <div className="inspector-section">
+          <label className="inspector-label">Components</label>
+          {node.components.length > 0 && componentsRevision && (
+            <div className="component-list">
+              {node.components.map((comp) => (
+                <ComponentEditor
+                  key={comp.id}
+                  nodeId={node.id}
+                  component={comp}
+                  onRemove={removeComponent}
+                  onUpdate={updateComponent}
+                />
+              ))}
+            </div>
+          )}
+          <div className="component-add-row">
+            <select
+              key={componentSelectKey}
+              className="component-type-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  addComponent(node.id, e.target.value as any);
+                  setComponentSelectKey((k) => k + 1);
+                }
+              }}
+            >
+              <option value="">Add Component...</option>
+              {BUILTIN_COMPONENT_TYPES.map((t) => (
+                <option key={t} value={t}>{getComponentDisplayName(t)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="inspector-section">
+          <button
+            className="toolbar-btn"
+            onClick={() => createPrefabFromNode(node.id)}
+            title="Save as Prefab"
+          >
+            Save as Prefab
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComponentEditor({ nodeId, component, onRemove, onUpdate }: {
+  nodeId: number;
+  component: ComponentData;
+  onRemove: (nodeId: number, componentId: string) => void;
+  onUpdate: (nodeId: number, componentId: string, properties: Record<string, any>) => void;
+}) {
+  const labels = getComponentPropertyLabels(component.type);
+
+  return (
+    <div className="component-item">
+      <div className="component-header">
+        <span className="component-name">{getComponentDisplayName(component.type)}</span>
+        <button
+          className="component-remove-btn"
+          onClick={() => onRemove(nodeId, component.id)}
+          title="Remove"
+        >
+          x
+        </button>
+      </div>
+      <div className="component-properties">
+        {Object.entries(component.properties).map(([key, value]) => (
+          <div key={key} className="component-property">
+            <label className="inspector-sublabel">{labels[key] ?? key}</label>
+            {typeof value === 'boolean' ? (
+              <label className="inspector-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={value}
+                  onChange={(e) => onUpdate(nodeId, component.id, { [key]: e.target.checked })}
+                />
+                <span className="inspector-checkbox-label">{value ? 'Yes' : 'No'}</span>
+              </label>
+            ) : typeof value === 'number' ? (
+              <input
+                className="inspector-number"
+                type="number"
+                step="0.1"
+                value={value}
+                onChange={(e) => onUpdate(nodeId, component.id, { [key]: parseFloat(e.target.value) || 0 })}
+              />
+            ) : typeof value === 'string' && value.length > 30 ? (
+              <textarea
+                className="component-textarea"
+                value={value}
+                rows={4}
+                onChange={(e) => onUpdate(nodeId, component.id, { [key]: e.target.value })}
+              />
+            ) : Array.isArray(value) ? (
+              <input
+                className="inspector-input"
+                type="text"
+                value={value.join(', ')}
+                onChange={(e) => onUpdate(nodeId, component.id, { [key]: e.target.value.split(',').map((v) => parseFloat(v.trim()) || 0) })}
+              />
+            ) : (
+              <input
+                className="inspector-input"
+                type="text"
+                value={value}
+                onChange={(e) => onUpdate(nodeId, component.id, { [key]: e.target.value })}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

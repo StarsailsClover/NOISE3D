@@ -1,4 +1,5 @@
 import { Vec3 } from '@math/Vec';
+import type { ComponentData } from './Component';
 
 let nextId = 1;
 export type PrimitiveType =
@@ -22,6 +23,7 @@ export class SceneNode {
   childIds: number[];
   meshAssetId: string | null;
   textureAssetId: string | null;
+  components: ComponentData[];
 
   constructor(
     name: string,
@@ -41,11 +43,30 @@ export class SceneNode {
     this.childIds = [];
     this.meshAssetId = null;
     this.textureAssetId = null;
+    this.components = [];
+  }
+
+  addComponent(component: ComponentData): void {
+    this.components.push(component);
+  }
+
+  removeComponent(componentId: string): void {
+    this.components = this.components.filter((c) => c.id !== componentId);
+  }
+
+  getComponent(type: string): ComponentData | undefined {
+    return this.components.find((c) => c.type === type);
   }
 
   clone(): SceneNode {
     const node = new SceneNode(this.name, this.type, this.position.clone(), this.rotation.clone(), this.scale.clone());
     node.visible = this.visible;
+    node.meshAssetId = this.meshAssetId;
+    node.textureAssetId = this.textureAssetId;
+    node.components = this.components.map((c) => ({
+      ...c,
+      properties: { ...c.properties },
+    }));
     return node;
   }
 
@@ -62,6 +83,7 @@ export class SceneNode {
       childIds: [...this.childIds],
       meshAssetId: this.meshAssetId,
       textureAssetId: this.textureAssetId,
+      components: this.components,
     };
   }
 }

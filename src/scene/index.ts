@@ -3,3 +3,7 @@ export type { PrimitiveType } from './SceneNode';
 export { Scene } from './Scene';
 export type { Light, LightType } from './Light';
 export { createDirectionalLight, createPointLight, createSpotLight, MAX_LIGHTS, resetLightIdCounter } from './Light';
+export { createComponent, BUILTIN_COMPONENT_TYPES, getComponentDisplayName, getComponentPropertyLabels, getNextComponentId, resetComponentIdCounter } from './Component';
+export type { ComponentType, ComponentData, IComponent } from './Component';
+export { PrefabManager, createPrefabId } from './Prefab';
+export type { PrefabData } from './Prefab';

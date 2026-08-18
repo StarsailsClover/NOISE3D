@@ -14,9 +14,13 @@ import { UndoManager } from './UndoManager';
 import { AssetManager, type Asset } from './AssetManager';
 import { OBJParser } from '@renderer/OBJParser';
 import { SceneExporter } from '@renderer/SceneExporter';
+import { createComponent, type ComponentData, type ComponentType } from '@scene/Component';
+import { PrefabManager, createPrefabId, type PrefabData } from '@scene/Prefab';
+import { Color } from '@math/Vec';
 
 const undoManager = new UndoManager();
 const assetManager = new AssetManager();
+const prefabManager = new PrefabManager();
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type SceneViewMode = 'material' | 'wireframe' | 'solid' | 'rendered';
@@ -106,6 +110,13 @@ export interface EditorState {
   tickAnimation: (dt: number) => void;
   cameraState: object | null;
   setCameraState: (state: object | null) => void;
+  components: ComponentData[];
+  prefabs: PrefabData[];
+  addComponent: (nodeId: number, type: ComponentType) => void;
+  removeComponent: (nodeId: number, componentId: string) => void;
+  updateComponent: (nodeId: number, componentId: string, properties: Record<string, any>) => void;
+  createPrefabFromNode: (nodeId: number) => void;
+  instantiatePrefab: (prefabId: string) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -142,6 +153,121 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isPlayingAnim: false,
   cameraState: null,
   setCameraState: (state) => set({ cameraState: state }),
+  components: [],
+  prefabs: [],
+
+  addComponent: (nodeId, type) => {
+    const state = get();
+    const node = state.scene.getNode(nodeId);
+    if (!node) return;
+    const comp = createComponent(type);
+    node.addComponent(comp);
+    const allComponents: ComponentData[] = [];
+    for (const n of state.scene.getAllNodes()) {
+      allComponents.push(...n.components);
+    }
+    set({ components: allComponents });
+    get().log('info', `Added ${type} component to ${node.name}`);
+  },
+
+  removeComponent: (nodeId, componentId) => {
+    const state = get();
+    const node = state.scene.getNode(nodeId);
+    if (!node) return;
+    node.removeComponent(componentId);
+    const allComponents: ComponentData[] = [];
+    for (const n of state.scene.getAllNodes()) {
+      allComponents.push(...n.components);
+    }
+    set({ components: allComponents });
+    get().log('info', `Removed component from ${node.name}`);
+  },
+
+  updateComponent: (nodeId, componentId, properties) => {
+    const state = get();
+    const node = state.scene.getNode(nodeId);
+    if (!node) return;
+    const comp = node.components.find((c) => c.id === componentId);
+    if (!comp) return;
+    comp.properties = { ...comp.properties, ...properties };
+    const allComponents: ComponentData[] = [];
+    for (const n of state.scene.getAllNodes()) {
+      allComponents.push(...n.components);
+    }
+    set({ components: allComponents });
+  },
+
+  createPrefabFromNode: (nodeId) => {
+    const state = get();
+    const node = state.scene.getNode(nodeId);
+    if (!node) return;
+    const mat = state.materials.get(nodeId);
+    const prefab: PrefabData = {
+      id: createPrefabId(),
+      name: `${node.name} Prefab`,
+      nodeData: {
+        name: node.name,
+        type: node.type,
+        position: node.position.toArray(),
+        rotation: node.rotation.toArray(),
+        scale: node.scale.toArray(),
+        meshAssetId: node.meshAssetId,
+        textureAssetId: node.textureAssetId,
+        childPrefabs: [],
+      },
+      components: node.components.map((c) => ({ ...c, properties: { ...c.properties } })),
+      material: mat ? {
+        baseColor: mat.baseColor.toArray(),
+        metallic: mat.metallic,
+        roughness: mat.roughness,
+        emissive: mat.emissive.toArray(),
+        emissiveIntensity: mat.emissiveIntensity,
+        wireframe: mat.wireframe,
+        doubleSided: mat.doubleSided,
+      } : {
+        baseColor: [1, 1, 1, 1],
+        metallic: 0,
+        roughness: 0.5,
+        emissive: [0, 0, 0, 0],
+        emissiveIntensity: 0,
+        wireframe: false,
+        doubleSided: false,
+      },
+      createdAt: Date.now(),
+    };
+    prefabManager.savePrefab(prefab);
+    set({ prefabs: prefabManager.getAllPrefabs() });
+    get().log('info', `Created prefab: ${prefab.name}`);
+  },
+
+  instantiatePrefab: (prefabId) => {
+    const state = get();
+    const prefab = prefabManager.getPrefab(prefabId);
+    if (!prefab) return;
+    state.takeSnapshot();
+    const node = state.scene.createPrimitive(prefab.nodeData.type as any, prefab.nodeData.name);
+    node.position = new Vec3(...prefab.nodeData.position);
+    node.rotation = new Vec3(...prefab.nodeData.rotation);
+    node.scale = new Vec3(...prefab.nodeData.scale);
+    node.meshAssetId = prefab.nodeData.meshAssetId;
+    node.textureAssetId = prefab.nodeData.textureAssetId;
+    node.components = prefab.components.map((c) => ({ ...c, properties: { ...c.properties } }));
+    const mat = createDefaultMaterial();
+    mat.baseColor = new Color(...prefab.material.baseColor);
+    mat.metallic = prefab.material.metallic;
+    mat.roughness = prefab.material.roughness;
+    mat.emissive = new Color(...prefab.material.emissive);
+    mat.emissiveIntensity = prefab.material.emissiveIntensity;
+    mat.wireframe = prefab.material.wireframe;
+    mat.doubleSided = prefab.material.doubleSided;
+    state.materials.set(node.id, mat);
+    const allComponents: ComponentData[] = [];
+    for (const n of state.scene.getAllNodes()) {
+      allComponents.push(...n.components);
+    }
+    set({ selectedNodeId: node.id, selectedNodeIds: [node.id], components: allComponents, undoRevision: get().undoRevision + 1 });
+    get().log('info', `Instantiated prefab: ${prefab.name}`);
+  },
 
   addPrimitive: (type, parentId) => {
     const state = get();
