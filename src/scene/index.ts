@@ -7,3 +7,5 @@ export { createComponent, BUILTIN_COMPONENT_TYPES, getComponentDisplayName, getC
 export type { ComponentType, ComponentData, IComponent } from './Component';
 export { PrefabManager, createPrefabId } from './Prefab';
 export type { PrefabData } from './Prefab';
+export { PhysicsWorld } from './Physics';
+export type { PhysicsBody, RaycastHit, CollisionEvent, AABB, Sphere, ColliderShape } from './Physics';

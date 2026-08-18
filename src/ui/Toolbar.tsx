@@ -21,6 +21,10 @@ export function Toolbar() {
   const toggleEditorMode = useEditorStore((s) => s.toggleEditorMode);
   const tickAnimation = useEditorStore((s) => s.tickAnimation);
   const isPlayingAnim = useEditorStore((s) => s.isPlayingAnim);
+  const physicsEnabled = useEditorStore((s) => s.physicsEnabled);
+  const togglePhysics = useEditorStore((s) => s.togglePhysics);
+  const physicsDebug = useEditorStore((s) => s.physicsDebug);
+  const togglePhysicsDebug = useEditorStore((s) => s.togglePhysicsDebug);
   const backend = getPreferredBackend();
   return (
     <div className="main-toolbar">
@@ -56,6 +60,20 @@ export function Toolbar() {
         </button>
         <button className={`toolbar-btn ${showGrid ? 'active' : ''}`} onClick={toggleGrid}>Grid</button>
         <button
+          className={`toolbar-btn ${physicsEnabled ? 'active' : ''}`}
+          onClick={togglePhysics}
+          title="Toggle Physics Simulation"
+        >
+          Phys
+        </button>
+        <button
+          className={`toolbar-btn ${physicsDebug ? 'active' : ''}`}
+          onClick={togglePhysicsDebug}
+          title="Toggle Physics Debug Visualization"
+        >
+          PhysDebug
+        </button>
+        <button
           className={`toolbar-btn ${isPlaying ? 'active' : ''}`}
           onClick={() => {
             togglePlay();
@@ -70,7 +88,7 @@ export function Toolbar() {
                   requestAnimationFrame(loop);
                 }
               };
-              if (isPlayingAnim) requestAnimationFrame(loop);
+              if (isPlayingAnim || useEditorStore.getState().physicsEnabled) requestAnimationFrame(loop);
             }
           }}
         >

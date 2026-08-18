@@ -16,11 +16,13 @@ import { OBJParser } from '@renderer/OBJParser';
 import { SceneExporter } from '@renderer/SceneExporter';
 import { createComponent, type ComponentData, type ComponentType } from '@scene/Component';
 import { PrefabManager, createPrefabId, type PrefabData } from '@scene/Prefab';
+import { PhysicsWorld, type RaycastHit } from '@scene/Physics';
 import { Color } from '@math/Vec';
 
 const undoManager = new UndoManager();
 const assetManager = new AssetManager();
 const prefabManager = new PrefabManager();
+const physicsWorld = new PhysicsWorld();
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type SceneViewMode = 'material' | 'wireframe' | 'solid' | 'rendered';
@@ -117,6 +119,12 @@ export interface EditorState {
   updateComponent: (nodeId: number, componentId: string, properties: Record<string, any>) => void;
   createPrefabFromNode: (nodeId: number) => void;
   instantiatePrefab: (prefabId: string) => void;
+  physicsEnabled: boolean;
+  togglePhysics: () => void;
+  physicsDebug: boolean;
+  togglePhysicsDebug: () => void;
+  stepPhysics: (dt: number) => void;
+  raycast: (origin: Vec3, direction: Vec3, maxDist?: number) => RaycastHit | null;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -267,6 +275,55 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
     set({ selectedNodeId: node.id, selectedNodeIds: [node.id], components: allComponents, undoRevision: get().undoRevision + 1 });
     get().log('info', `Instantiated prefab: ${prefab.name}`);
+  },
+
+  physicsEnabled: false,
+  physicsDebug: false,
+
+  togglePhysics: () => {
+    const state = get();
+    const enabled = !state.physicsEnabled;
+    if (enabled) {
+      physicsWorld.syncFromScene(state.scene.getAllNodes());
+      useEditorStore.getState().log('info', 'Physics simulation started');
+    } else {
+      useEditorStore.getState().log('info', 'Physics simulation stopped');
+    }
+    set({ physicsEnabled: enabled });
+  },
+
+  togglePhysicsDebug: () => {
+    const state = get();
+    physicsWorld.setDebug(!state.physicsDebug);
+    set({ physicsDebug: !state.physicsDebug });
+  },
+
+  stepPhysics: (dt) => {
+    const state = get();
+    if (!state.physicsEnabled) return;
+    physicsWorld.syncFromScene(state.scene.getAllNodes());
+    physicsWorld.step(dt);
+
+    // Apply physics positions back to scene nodes
+    for (const body of physicsWorld.getBodies()) {
+      const node = state.scene.getNode(body.nodeId);
+      if (node) {
+        node.position = body.position.clone();
+      }
+    }
+
+    // Log collision events
+    for (const evt of physicsWorld.getEvents()) {
+      if (evt.type === 'enter') {
+        get().log('info', `Collision: node ${evt.bodyA} <-> node ${evt.bodyB}`);
+      }
+    }
+
+    set({ scene: state.scene });
+  },
+
+  raycast: (origin, direction, maxDist) => {
+    return physicsWorld.raycast(origin, direction, maxDist);
   },
 
   addPrimitive: (type, parentId) => {
@@ -666,21 +723,42 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   tickAnimation: (dt) => {
     const state = get();
-    if (!state.isPlayingAnim || state.selectedClipId === null) return;
-    const clip = state.animationClips.find((c) => c.id === state.selectedClipId);
-    if (!clip) return;
-    const newTime = state.currentTime + dt;
-    const wrappedTime = clip.loop ? newTime % clip.duration : Math.min(newTime, clip.duration);
-    set({ currentTime: wrappedTime });
+    if (state.isPlayingAnim || state.physicsEnabled) {
+      if (state.isPlayingAnim && state.selectedClipId !== null) {
+        const clip = state.animationClips.find((c) => c.id === state.selectedClipId);
+        if (clip) {
+          const newTime = state.currentTime + dt;
+          const wrappedTime = clip.loop ? newTime % clip.duration : Math.min(newTime, clip.duration);
+          set({ currentTime: wrappedTime });
 
-    for (const track of clip.tracks) {
-      const sampled = sampleAnimation(clip, wrappedTime, track.nodeId, track.propertyName);
-      if (sampled) {
-        const node = state.scene.getNode(track.nodeId);
-        if (node) {
-          if (track.propertyName === 'position') node.position.copy(sampled);
-          else if (track.propertyName === 'rotation') node.rotation.copy(sampled);
-          else node.scale.copy(sampled);
+          for (const track of clip.tracks) {
+            const sampled = sampleAnimation(clip, wrappedTime, track.nodeId, track.propertyName);
+            if (sampled) {
+              const node = state.scene.getNode(track.nodeId);
+              if (node) {
+                if (track.propertyName === 'position') node.position.copy(sampled);
+                else if (track.propertyName === 'rotation') node.rotation.copy(sampled);
+                else node.scale.copy(sampled);
+              }
+            }
+          }
+        }
+      }
+
+      // Step physics
+      if (state.physicsEnabled) {
+        physicsWorld.syncFromScene(state.scene.getAllNodes());
+        physicsWorld.step(dt);
+        for (const body of physicsWorld.getBodies()) {
+          const node = state.scene.getNode(body.nodeId);
+          if (node) {
+            node.position = body.position.clone();
+          }
+        }
+        for (const evt of physicsWorld.getEvents()) {
+          if (evt.type === 'enter') {
+            get().log('info', `Collision: node ${evt.bodyA} <-> node ${evt.bodyB}`);
+          }
         }
       }
     }
