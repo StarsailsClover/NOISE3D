@@ -1048,3 +1048,149 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+.material-editor-panel {
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  height: 260px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.material-editor-body {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  padding: 4px;
+}
+
+.node-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.node-palette-btn {
+  padding: 3px 6px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  text-align: left;
+}
+
+.node-palette-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-blue);
+}
+
+.shader-canvas {
+  flex: 1;
+  position: relative;
+  background:
+    radial-gradient(circle, #2a2a2a 1px, transparent 1px) 0 0 / 16px 16px,
+    var(--bg-darkest);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.shader-node-card {
+  position: absolute;
+  min-width: 110px;
+  background: var(--bg-medium);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 10px;
+  user-select: none;
+}
+
+.shader-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 6px;
+  background: rgba(74, 144, 217, 0.25);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.shader-node-title {
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.shader-node-remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.shader-node-sockets {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  gap: 8px;
+}
+
+.socket-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.socket-row {
+  display: flex;
+}
+
+.socket-input,
+.socket-output {
+  padding: 1px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.socket-input {
+  border-left: 2px solid #44dd88;
+}
+
+.socket-output {
+  border-right: 2px solid #dd8844;
+}
+
+.socket-input:hover,
+.socket-output:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.socket-input.connected {
+  color: #88ffbb;
+}
+
+.socket-output.connected {
+  color: #ffc088;
+}
+
+.compiled-code {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  max-height: 90px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #9fdc9f;
+}
