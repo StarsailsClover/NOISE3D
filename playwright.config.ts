@@ -2,9 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 60000,
+  timeout: 30000,
   expect: { timeout: 10000 },
   fullyParallel: false,
+  workers: 1,
   retries: 1,
   reporter: [['html'], ['list']],
   use: {
@@ -25,3 +26,4 @@ export default defineConfig({
     timeout: 30000,
   },
 });
+

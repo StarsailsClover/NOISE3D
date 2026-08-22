@@ -1,5 +1,27 @@
 # Version History
 
+## v26.1-19.0 (2026-08-20) - LTS Release
+
+### Added
+- Workspace system: Layout / Modeling / Shading / Animation / Rendering tabs centered in toolbar
+- Per-workspace panel visibility sets; viewport present in every workspace
+- Panel collapse via header click with chevron indicator
+- Workspace choice + per-workspace collapse state persisted to localStorage
+- `?ws=` URL parameter for direct workspace deep-linking
+- WorkspaceStore (zustand) with WORKSPACES registry and PanelId union
+
+### Fixed
+- Panel sizing regressions from slot wrapping: removed legacy descendant rules
+  (`.app-left .panel.light-panel` max-height resolved against wrong base and collapsed bodies)
+- Slot-level layout ownership: explicit heights/flex per [data-panel-id]
+- v15 physics Play-button strict-mode ambiguity (toolbar vs timeline)
+- v16 material editor socket clicks now scrollIntoViewIfNeeded (flaky under load)
+
+### Tested
+- 17 new Playwright E2E tests for workspaces/collapse/persistence
+- Full suite: 293 passed, 0 failed
+- Legacy specs migrated to workspace-aware URLs (?ws=modeling/shading/animation/rendering)
+
 ## v26.1-18.0 (2026-08-19) - LTS Release
 
 ### Added

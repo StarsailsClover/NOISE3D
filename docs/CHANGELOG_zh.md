@@ -1,5 +1,27 @@
 # 版本历史
 
+## v26.1-19.0 (2026-08-20) - LTS 发布
+
+### 新增
+- 工作区系统: 工具栏居中的 Layout / Modeling / Shading / Animation / Rendering 标签
+- 每工作区面板可见性集合; 视口在所有工作区常驻
+- 点击面板标题折叠面板 (带箭头指示)
+- 工作区选择 + 各工作区折叠状态持久化到 localStorage
+- `?ws=` URL 参数直达工作区
+- WorkspaceStore (zustand), WORKSPACES 注册表与 PanelId 联合类型
+
+### 修复
+- Slot 包裹引发的面板尺寸回归: 移除遗留后代选择器规则
+  (`.app-left .panel.light-panel` 的 max-height 以错误基准解析导致面板体塌陷为 0)
+- 布局所有权迁移至槽层级: 按 [data-panel-id] 显式高度/弹性
+- v15 物理 Play 按钮 strict 歧义 (工具栏 vs 时间线)
+- v16 材质编辑器 socket 点击增加 scrollIntoViewIfNeeded (负载下偶发)
+
+### 测试
+- 17 个新 Playwright E2E 测试 (工作区/折叠/持久化)
+- 全量套件: 293 通过, 0 失败
+- 旧规格迁移为工作区感知 URL (?ws=modeling/shading/animation/rendering)
+
 ## v26.1-18.0 (2026-08-19) - LTS 发布
 
 ### 新增

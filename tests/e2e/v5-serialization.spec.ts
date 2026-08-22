@@ -2,44 +2,44 @@ import { test, expect } from '@playwright/test';
 
 test.describe('NOISE3D v5 - Scene Serialization', () => {
   test('file menu button exists', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await expect(page.locator('.toolbar-btn:has-text("File")')).toBeVisible();
   });
 
   test('file menu opens on click', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await expect(page.locator('.file-menu')).toBeVisible();
   });
 
   test('file menu has New Scene option', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await expect(page.locator('.file-menu-item:has-text("New Scene")')).toBeVisible();
   });
 
   test('file menu has scene name input', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await expect(page.locator('.file-menu-input')).toBeVisible();
   });
 
   test('file menu has save and load options', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await expect(page.locator('.file-menu-item:has-text("Save to Browser")')).toBeVisible();
     await expect(page.locator('.file-menu-item:has-text("Load from Browser")')).toBeVisible();
   });
 
   test('file menu has download and import options', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await expect(page.locator('.file-menu-item:has-text("Download")')).toBeVisible();
     await expect(page.locator('.file-menu-item:has-text("Import")')).toBeVisible();
   });
 
   test('new scene clears existing objects', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     await page.locator('.viewport-toolbar button:has-text("Sphere")').click();
     await expect(page.locator('.hierarchy-item')).toHaveCount(3);
@@ -50,7 +50,7 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
   });
 
   test('save and load scene from browser storage', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
 
     await page.locator('.toolbar-btn:has-text("File")').click();
@@ -70,12 +70,12 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
   });
 
   test('scene name displays in toolbar', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await expect(page.locator('.scene-name')).toContainText('Untitled');
   });
 
   test('save updates scene name', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await page.locator('.file-menu-input').fill('MyProject');
     await page.locator('.file-menu-item:has-text("Save to Browser")').click();
@@ -83,7 +83,7 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
   });
 
   test('file menu closes on overlay click', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await expect(page.locator('.file-menu')).toBeVisible();
     await page.locator('.file-menu-overlay').click();
@@ -91,7 +91,7 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
   });
 
   test('file menu shows current scene name', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await page.locator('.file-menu-input').fill('DisplayTest');
     await page.locator('.file-menu-item:has-text("Save to Browser")').click();
@@ -100,7 +100,7 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
   });
 
   test('console logs save action', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.toolbar-btn:has-text("File")').click();
     await page.locator('.file-menu-input').fill('LogTest');
     await page.locator('.file-menu-item:has-text("Save to Browser")').click();
@@ -108,7 +108,7 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
   });
 
   test('loaded scene preserves lights', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?ws=rendering');
     await page.locator('.light-panel .panel-btn:has-text("Point")').click();
 
     await page.locator('.toolbar-btn:has-text("File")').click();
@@ -124,3 +124,4 @@ test.describe('NOISE3D v5 - Scene Serialization', () => {
     await expect(page.locator('.light-item').filter({ hasText: 'Point Light' })).toBeVisible();
   });
 });
+

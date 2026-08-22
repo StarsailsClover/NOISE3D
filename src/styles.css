@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg-darkest: #111111;
   --bg-dark: #1a1a1a;
   --bg-medium: #252525;
@@ -43,16 +43,7 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.app-left .panel.hierarchy-panel {
-  flex: 1;
-  min-height: 200px;
-}
-
-.app-left .panel.light-panel {
-  flex-shrink: 0;
-  max-height: 50%;
-  overflow: hidden;
-}
+/* Panel sizing is owned by [data-panel-id] slots since workspace refactor */
 
 .app-left .panel.light-panel .panel-body {
   overflow-y: auto;
@@ -386,9 +377,7 @@
 }
 
 .console-panel {
-  height: 120px;
-  min-height: 60px;
-  flex-shrink: 0;
+  min-height: 0;
   border-top: 1px solid var(--border-color);
 }
 
@@ -754,7 +743,6 @@
 .asset-panel {
   background: var(--bg-dark);
   flex-shrink: 0;
-  max-height: 30%;
   overflow: hidden;
   border-top: 1px solid var(--border-color);
 }
@@ -829,7 +817,6 @@
 .code-editor-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 25%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -837,9 +824,6 @@
 
 .timeline-panel {
   border-top: 1px solid var(--border-color);
-  height: 110px;
-  min-height: 60px;
-  flex-shrink: 0;
 }
 
 .timeline-body {
@@ -940,7 +924,6 @@
 .particle-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 30%;
   overflow: hidden;
 }
 
@@ -991,7 +974,6 @@
 .code-editor-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 25%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1052,7 +1034,6 @@
 .material-editor-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  height: 260px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1198,7 +1179,6 @@
 .environment-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 35%;
   overflow: hidden;
 }
 
@@ -1248,7 +1228,6 @@
 .mesh-edit-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 35%;
   overflow: hidden;
 }
 
@@ -1313,7 +1292,6 @@
 .curve-editor-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 30%;
   overflow: hidden;
 }
 
@@ -1354,7 +1332,6 @@
 .plugin-manager-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 30%;
   overflow: hidden;
 }
 
@@ -1434,3 +1411,157 @@
   font-size: 11px;
   color: var(--text-primary);
 }
+
+.workspace-tabs {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.workspace-tab {
+  padding: 4px 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.workspace-tab:hover {
+  color: var(--text-primary);
+}
+
+.workspace-tab.active {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.panel-slot {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-slot-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.collapse-chevron {
+  position: absolute;
+  left: -6px;
+  top: 7px;
+  z-index: 5;
+  font-size: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: transform 0.15s;
+}
+
+.collapse-chevron.closed {
+  transform: rotate(-90deg);
+}
+
+.slot-collapsed {
+  flex: 0 0 auto !important;
+}
+
+.slot-collapsed .panel-body {
+  display: none;
+}
+
+.slot-collapsed .panel-slot-inner {
+  height: auto;
+}
+
+.app-left .panel-slot,
+.app-right .panel-slot {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Slot-level sizing mirrors legacy direct-child rules */
+[data-panel-id='hierarchy'] {
+  flex: 1 1 auto !important;
+  min-height: 160px;
+}
+
+[data-panel-id='inspector'] {
+  flex: 1 1 auto !important;
+  min-height: 200px;
+}
+
+[data-panel-id='timeline'] {
+  flex: 0 0 auto !important;
+  height: 110px;
+  min-height: 60px;
+}
+
+[data-panel-id='console'] {
+  flex: 0 0 auto !important;
+  height: 120px;
+  min-height: 60px;
+}
+
+[data-panel-id='light'] {
+  height: 230px;
+}
+
+[data-panel-id='environment'] {
+  height: 280px;
+}
+
+[data-panel-id='particle'] {
+  height: 210px;
+}
+
+[data-panel-id='asset'] {
+  height: 190px;
+}
+
+[data-panel-id='plugin-manager'] {
+  height: 200px;
+}
+
+[data-panel-id='mesh-edit'] {
+  height: 300px;
+}
+
+[data-panel-id='curve-editor'] {
+  height: 240px;
+}
+
+[data-panel-id='code-editor'] {
+  height: 200px;
+}
+
+[data-panel-id='material-editor'] {
+  flex: 0 0 auto !important;
+  height: 260px;
+}
+
+.app-center .panel-slot {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-left .panel-slot .panel,
+.app-right .panel-slot .panel,
+.app-center .panel-slot .panel {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Workspace-specific sizing: give primary panels room */
+[data-workspace='layout'] .app-center {
+  min-width: 50%;
+}
+
