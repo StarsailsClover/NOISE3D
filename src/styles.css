@@ -386,8 +386,9 @@
 }
 
 .console-panel {
-  height: 200px;
-  min-height: 100px;
+  height: 120px;
+  min-height: 60px;
+  flex-shrink: 0;
   border-top: 1px solid var(--border-color);
 }
 
@@ -821,13 +822,23 @@
 
 .app-right .inspector-panel {
   flex: 1;
+  min-height: 200px;
   overflow: hidden;
+}
+
+.code-editor-panel {
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  max-height: 25%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .timeline-panel {
   border-top: 1px solid var(--border-color);
-  height: 140px;
-  min-height: 80px;
+  height: 110px;
+  min-height: 60px;
   flex-shrink: 0;
 }
 
@@ -980,10 +991,14 @@
 .code-editor-panel {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
-  max-height: 40%;
+  max-height: 25%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.code-textarea {
+  min-height: 60px;
 }
 
 .code-editor-panel .panel-body {

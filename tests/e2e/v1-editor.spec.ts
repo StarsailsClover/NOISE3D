@@ -79,6 +79,6 @@ test.describe('NOISE3D v1 - Core Editor', () => {
   test('console logs primitive creation', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    await expect(page.locator('.console-message')).toContainText(/Created cube/);
+    await expect(page.locator('.console-message').last()).toContainText(/Created cube/);
   });
 });

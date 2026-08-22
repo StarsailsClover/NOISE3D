@@ -32,12 +32,14 @@ test.describe('NOISE3D v26.1-10.0 - Interactive Transform Gizmo', () => {
 
   test('keyboard shortcut E sets rotate mode', async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('.gizmo-btn:has-text("Move")')).toBeVisible();
     await page.keyboard.press('e');
     await expect(page.locator('.gizmo-btn:has-text("Rotate")')).toHaveClass(/active/);
   });
 
   test('keyboard shortcut R sets scale mode', async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('.gizmo-btn:has-text("Move")')).toBeVisible();
     await page.keyboard.press('r');
     await expect(page.locator('.gizmo-btn:has-text("Scale")')).toHaveClass(/active/);
   });

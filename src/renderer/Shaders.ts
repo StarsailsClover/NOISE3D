@@ -55,6 +55,9 @@ uniform bool uHasTexture;
 uniform vec2 uTextureTiling;
 uniform vec2 uTextureOffset;
 
+// 0 = wireframe, 1 = solid (unlit), 2 = material preview, 3 = rendered (full PBR)
+uniform int uViewMode;
+
 out vec4 fragColor;
 
 const float PI = 3.14159265359;

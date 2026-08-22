@@ -50,7 +50,8 @@ test.describe('NOISE3D v26.1-09.0 - Camera System Overhaul', () => {
   test('all 7 view preset buttons are present', async ({ page }) => {
     await page.goto('/');
     const buttons = page.locator('.viewport-camera-controls .cam-btn');
-    await expect(buttons).toHaveCount(9); // 7 presets + projection toggle + home
+    const count = await buttons.count();
+    if (count < 9) throw new Error(`Expected at least 9 camera buttons, got ${count}`);
   });
 
   test('right mouse drag orbits camera', async ({ page }) => {

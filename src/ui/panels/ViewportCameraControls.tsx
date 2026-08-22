@@ -8,6 +8,8 @@ interface ViewportCameraControlsProps {
 export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProps) {
   const setCameraPos = useEditorStore((s) => s.setCameraPos);
   const setCameraTarget = useEditorStore((s) => s.setCameraTarget);
+  const sceneViewMode = useEditorStore((s) => s.sceneViewMode);
+  const setSceneViewMode = useEditorStore((s) => s.setSceneViewMode);
   const [projectionMode, setProjectionMode] = useState<'perspective' | 'orthographic'>('perspective');
 
   const updateStore = () => {
@@ -76,6 +78,37 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
         {projectionMode === 'orthographic' ? 'ORTHO' : 'PERSP'}
       </button>
       <button className="cam-btn" onClick={frameAll} title="Frame All">Home</button>
+      <div className="cam-separator" />
+      <div className="viewport-viewmode-controls">
+        <button
+          className={`cam-btn ${sceneViewMode === 'wireframe' ? 'active' : ''}`}
+          onClick={() => setSceneViewMode('wireframe')}
+          title="Wireframe"
+        >
+          Wire
+        </button>
+        <button
+          className={`cam-btn ${sceneViewMode === 'solid' ? 'active' : ''}`}
+          onClick={() => setSceneViewMode('solid')}
+          title="Solid (Unlit)"
+        >
+          Solid
+        </button>
+        <button
+          className={`cam-btn ${sceneViewMode === 'material' ? 'active' : ''}`}
+          onClick={() => setSceneViewMode('material')}
+          title="Material Preview"
+        >
+          MatCap
+        </button>
+        <button
+          className={`cam-btn ${sceneViewMode === 'rendered' ? 'active' : ''}`}
+          onClick={() => setSceneViewMode('rendered')}
+          title="Rendered"
+        >
+          Rendered
+        </button>
+      </div>
     </div>
   );
 }
