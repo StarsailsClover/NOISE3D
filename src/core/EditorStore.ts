@@ -17,6 +17,8 @@ import { SceneExporter } from '@renderer/SceneExporter';
 import { createComponent, type ComponentData, type ComponentType } from '@scene/Component';
 import { PrefabManager, createPrefabId, type PrefabData } from '@scene/Prefab';
 import { PhysicsWorld, type RaycastHit } from '@scene/Physics';
+import { createTerrain, generateProceduralHeights, flattenTerrain as flattenTerrainOp, type TerrainData } from '@scene/Terrain';
+import { createDefaultEnvironment, type EnvironmentSettings } from '@scene/Environment';
 import { Color } from '@math/Vec';
 
 const undoManager = new UndoManager();
@@ -125,6 +127,13 @@ export interface EditorState {
   togglePhysicsDebug: () => void;
   stepPhysics: (dt: number) => void;
   raycast: (origin: Vec3, direction: Vec3, maxDist?: number) => RaycastHit | null;
+  terrain: TerrainData | null;
+  environment: EnvironmentSettings;
+  addTerrain: () => void;
+  removeTerrain: () => void;
+  generateProceduralTerrain: (seed: number) => void;
+  flattenTerrain: (x: number, z: number, strength: number) => void;
+  updateEnvironment: (partial: Partial<EnvironmentSettings>) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -154,6 +163,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   postBloomIntensity: 0.3,
   renderCanvas: null,
   editorMode: '3D' as '3D' | '2D',
+  terrain: null,
+  environment: createDefaultEnvironment(),
   particleEmitters: [],
   animationClips: [],
   selectedClipId: null,
@@ -324,6 +335,40 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   raycast: (origin, direction, maxDist) => {
     return physicsWorld.raycast(origin, direction, maxDist);
+  },
+
+  addTerrain: () => {
+    const terrain = createTerrain();
+    generateProceduralHeights(terrain);
+    set({ terrain });
+    get().log('info', `Created ${terrain.name}`);
+  },
+
+  removeTerrain: () => {
+    set({ terrain: null });
+    get().log('info', 'Removed terrain');
+  },
+
+  generateProceduralTerrain: (seed) => {
+    const state = get();
+    if (!state.terrain) return;
+    const terrain = { ...state.terrain, heights: new Float32Array(state.terrain.heights) };
+    generateProceduralHeights(terrain, seed);
+    set({ terrain });
+    get().log('info', `Terrain generated with seed ${seed}`);
+  },
+
+  flattenTerrain: (x, z, strength) => {
+    const state = get();
+    if (!state.terrain) return;
+    const terrain = { ...state.terrain, heights: new Float32Array(state.terrain.heights) };
+    flattenTerrainOp(terrain, x, z, 5, 0, strength);
+    set({ terrain });
+  },
+
+  updateEnvironment: (partial) => {
+    const state = get();
+    set({ environment: { ...state.environment, ...partial } });
   },
 
   addPrimitive: (type, parentId) => {

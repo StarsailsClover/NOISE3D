@@ -10,6 +10,7 @@ import { TimelinePanel } from './panels/TimelinePanel';
 import { ParticlePanel } from './panels/ParticlePanel';
 import { CodeEditorPanel } from './panels/CodeEditorPanel';
 import { MaterialEditorPanel } from './panels/MaterialEditorPanel';
+import { EnvironmentPanel } from './panels/EnvironmentPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
         <div className="app-left">
           <HierarchyPanel />
           <LightPanel />
+          <EnvironmentPanel />
           <ParticlePanel />
           <AssetPanel />
         </div>

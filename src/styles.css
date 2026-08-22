@@ -1194,3 +1194,53 @@
   font-size: 9px;
   color: #9fdc9f;
 }
+
+.environment-panel {
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  max-height: 35%;
+  overflow: hidden;
+}
+
+.environment-panel .panel-body {
+  overflow-y: auto;
+}
+
+.env-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.env-button-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.env-btn {
+  flex: 1;
+  padding: 4px 8px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.env-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-blue);
+}
+
+.env-select {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-size: 12px;
+}
