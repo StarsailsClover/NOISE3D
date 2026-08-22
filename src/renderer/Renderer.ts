@@ -43,6 +43,7 @@ export class Renderer {
   public fov: number = (60 * Math.PI) / 180;
   public near: number = 0.1;
   public far: number = 1000;
+  public projectionMatrix: Mat4 | null = null;
 
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
   public ambient: Vec3 = new Vec3(0.2, 0.2, 0.2);
@@ -284,7 +285,7 @@ export class Renderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     const aspect = canvasWidth / Math.max(1, canvasHeight);
-    const projection = Mat4.perspective(this.fov, aspect, this.near, this.far);
+    const projection = this.projectionMatrix ?? Mat4.perspective(this.fov, aspect, this.near, this.far);
     const view = Mat4.lookAt(this.cameraPos, this.cameraTarget, this.cameraUp);
 
     if (this.showGrid) {

@@ -9,6 +9,7 @@ import { RenderSettingsPanel } from './panels/RenderSettingsPanel';
 import { TimelinePanel } from './panels/TimelinePanel';
 import { ParticlePanel } from './panels/ParticlePanel';
 import { CodeEditorPanel } from './panels/CodeEditorPanel';
+import { MaterialEditorPanel } from './panels/MaterialEditorPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -33,6 +34,7 @@ export function App() {
           <InspectorPanel />
           <RenderSettingsPanel />
           <CodeEditorPanel />
+          <MaterialEditorPanel />
         </div>
       </div>
     </div>

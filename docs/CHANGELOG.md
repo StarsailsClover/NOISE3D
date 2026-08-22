@@ -1,5 +1,25 @@
 # Version History
 
+## v26.1-09.0 (2026-08-18) - LTS Release
+
+### Added
+- **View Preset Buttons**: Quick navigation to Front, Right, Top, ISO, Back, Left, Bottom views
+- **Projection Mode Toggle**: Switch between Perspective and Orthographic projection
+- **Smooth Camera Transitions**: Animated transitions when switching views
+- **Keyboard Shortcuts**: Numpad 1/3/7 for view presets, Numpad 5 for projection toggle
+- **Improved Camera Controls**: Better orbit, pan, and zoom with configurable sensitivity
+- **Frame Selected**: F key frames the selected object in viewport
+
+### Improved
+- OrbitCamera now supports both perspective and orthographic projection modes
+- Added projection matrix support to Renderer and WebGPURenderer
+- Ray picking updated to work with both projection modes
+- Camera state serialization support
+
+### Tested
+- 14 Playwright E2E tests for camera system
+- All v1-v9 and v26.1-08.0 tests passing (140 total)
+
 ## v26.1-09.0.RC (2026-08-18) - Pre-Release
 
 ## v26.1-08.0 (2026-08-17) - LTS Release

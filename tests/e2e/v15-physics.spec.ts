@@ -79,7 +79,7 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     await page.waitForTimeout(100);
 
     // Enable play mode to drive physics
-    await page.locator('.toolbar-btn:has-text("Play")').click();
+    await page.locator('button:has-text("Play")').click();
     await page.waitForTimeout(1000);
 
     // App should still be running
@@ -103,7 +103,7 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     // Enable physics and play
     await page.locator('button[title="Toggle Physics Simulation"]').click();
     await page.waitForTimeout(100);
-    await page.locator('.toolbar-btn:has-text("Play")').click();
+    await page.locator('button:has-text("Play")').click();
     await page.waitForTimeout(500);
 
     await expect(page.locator('.viewport-canvas')).toBeVisible();
@@ -128,7 +128,7 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     // Enable physics
     await page.locator('button[title="Toggle Physics Simulation"]').click();
     await page.waitForTimeout(100);
-    await page.locator('.toolbar-btn:has-text("Play")').click();
+    await page.locator('button:has-text("Play")').click();
     await page.waitForTimeout(1000);
 
     await expect(page.locator('.viewport-canvas')).toBeVisible();
@@ -146,7 +146,7 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     // Start physics
     await page.locator('button[title="Toggle Physics Simulation"]').click();
     await page.waitForTimeout(100);
-    await page.locator('.toolbar-btn:has-text("Play")').click();
+    await page.locator('button:has-text("Play")').click();
     await page.waitForTimeout(500);
 
     // Stop physics
@@ -178,4 +178,3 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     await expect(massProp.locator('input[type="number"]')).toHaveValue('1');
   });
 });
-

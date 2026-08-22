@@ -17,13 +17,14 @@ export class Ray {
     fov: number,
     near: number,
     far: number,
+    projectionMatrix?: Mat4,
   ): Ray {
     const ndcX = (2 * screenX) / viewportWidth - 1;
     const ndcY = 1 - (2 * screenY) / viewportHeight;
 
     const view = Mat4.lookAt(cameraPos, cameraTarget, new Vec3(0, 1, 0));
     const aspect = viewportWidth / viewportHeight;
-    const proj = Mat4.perspective(fov, aspect, near, far);
+    const proj = projectionMatrix ?? Mat4.perspective(fov, aspect, near, far);
 
     const viewInv = view.invert();
     const projInv = proj.invert();

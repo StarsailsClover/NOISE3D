@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 
 interface ViewportCameraControlsProps {
@@ -7,6 +8,7 @@ interface ViewportCameraControlsProps {
 export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProps) {
   const setCameraPos = useEditorStore((s) => s.setCameraPos);
   const setCameraTarget = useEditorStore((s) => s.setCameraTarget);
+  const [projectionMode, setProjectionMode] = useState<'perspective' | 'orthographic'>('perspective');
 
   const updateStore = () => {
     const cam = cameraRef.current;
@@ -26,12 +28,8 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
     const cam = cameraRef.current;
     if (!cam) return;
     cam.toggleProjection();
+    setProjectionMode(cam.projectionMode);
     updateStore();
-  };
-
-  const getProjectionMode = () => {
-    const cam = cameraRef.current;
-    return cam?.projectionMode ?? 'perspective';
   };
 
   const frameAll = () => {
@@ -40,6 +38,24 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
     cam.setView('iso');
     updateStore();
   };
+
+  // Listen for custom events from keyboard shortcuts
+  useEffect(() => {
+    const handleViewPreset = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setView(detail);
+    };
+    const handleToggleProjection = () => {
+      toggleProjection();
+    };
+
+    window.addEventListener('viewport-view-preset', handleViewPreset);
+    window.addEventListener('viewport-toggle-projection', handleToggleProjection);
+    return () => {
+      window.removeEventListener('viewport-view-preset', handleViewPreset);
+      window.removeEventListener('viewport-toggle-projection', handleToggleProjection);
+    };
+  }, []);
 
   return (
     <div className="viewport-camera-controls">
@@ -53,11 +69,11 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
       <button className="cam-btn" onClick={() => setView('bottom')} title="Bottom">Bt</button>
       <div className="cam-separator" />
       <button
-        className={`cam-btn ${getProjectionMode() === 'orthographic' ? 'active' : ''}`}
+        className={`cam-btn ${projectionMode === 'orthographic' ? 'active' : ''}`}
         onClick={toggleProjection}
         title="Perspective/Orthographic (Numpad 5)"
       >
-        {getProjectionMode() === 'orthographic' ? 'ORTHO' : 'PERSP'}
+        {projectionMode === 'orthographic' ? 'ORTHO' : 'PERSP'}
       </button>
       <button className="cam-btn" onClick={frameAll} title="Frame All">Home</button>
     </div>

@@ -38,11 +38,28 @@ export function useKeyboardShortcuts() {
           toggleGrid();
           return;
         }
-        if (e.key === 'a') {
-          e.preventDefault();
-          useEditorStore.getState().selectAllNodes();
-          return;
-        }
+      }
+
+      // View preset shortcuts (Numpad keys)
+      if (e.code === 'Numpad1') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('viewport-view-preset', { detail: 'front' }));
+        return;
+      }
+      if (e.code === 'Numpad3') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('viewport-view-preset', { detail: 'right' }));
+        return;
+      }
+      if (e.code === 'Numpad7') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('viewport-view-preset', { detail: 'top' }));
+        return;
+      }
+      if (e.code === 'Numpad5') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('viewport-toggle-projection'));
+        return;
       }
 
       switch (e.key.toLowerCase()) {

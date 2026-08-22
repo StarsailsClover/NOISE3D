@@ -16,6 +16,7 @@ export interface IRenderer {
   postExposure: number;
   postBloomThreshold: number;
   postBloomIntensity: number;
+  projectionMatrix: any;
   setMaterial: (nodeId: number, material: any) => void;
   uploadCustomMesh: (id: string, mesh: any) => void;
   render: (scene: any, width: number, height: number) => void;
