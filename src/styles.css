@@ -1309,3 +1309,44 @@
   color: var(--text-primary);
   border-color: var(--accent-blue);
 }
+
+.curve-editor-panel {
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  max-height: 30%;
+  overflow: hidden;
+}
+
+.curve-editor-panel .panel-body {
+  overflow-y: auto;
+}
+
+.curve-clips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+}
+
+.curve-empty {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.skeleton-info {
+  padding: 4px 6px;
+  background: var(--bg-darkest);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--accent-blue);
+}
+
+.ik-result {
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: rgba(74, 144, 217, 0.15);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #9fdc9f;
+}
