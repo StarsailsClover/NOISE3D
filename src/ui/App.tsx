@@ -13,6 +13,7 @@ import { MaterialEditorPanel } from './panels/MaterialEditorPanel';
 import { EnvironmentPanel } from './panels/EnvironmentPanel';
 import { MeshEditPanel } from './panels/MeshEditPanel';
 import { CurveEditorPanel } from './panels/CurveEditorPanel';
+import { PluginManagerPanel } from './panels/PluginManagerPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -28,6 +29,7 @@ export function App() {
           <EnvironmentPanel />
           <ParticlePanel />
           <AssetPanel />
+          <PluginManagerPanel />
         </div>
         <div className="app-center">
           <ViewportPanel />
