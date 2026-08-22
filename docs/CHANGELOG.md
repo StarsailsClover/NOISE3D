@@ -1,5 +1,97 @@
 # Version History
 
+## v26.1-18.0 (2026-08-19) - LTS Release
+
+### Added
+- Plugin system with PluginManager (register/unregister/enable/disable)
+- PluginContext API: registerPanel, registerTool, log, getSceneStats
+- Plugin manifest format (id/name/version/author/description)
+- Event hooks (onSceneLoad, onNodeSelect, onRender)
+- Inline plugin panel rendering in manager UI
+- Tool execution with editor console integration
+- Built-in plugins: Screenshot Tool, CSV Importer
+- 11 Playwright E2E tests
+
+## v26.1-17.0 (2026-08-18) - LTS Release
+
+### Added
+- KeyframeV2 with per-key interpolation (linear/bezier/step/ease-in/out/in-out)
+- Hermite spline evaluation with tangent handles
+- Skeletal rig: bone hierarchy + humanoid preset (7 bones)
+- Forward kinematics world position computation
+- Analytic 2-bone IK solver (law of cosines)
+- CurveEditorPanel with clip management and key insertion
+- 12 Playwright E2E tests
+
+## v26.1-16.0 (2026-08-18) - LTS Release
+
+### Added
+- UVUnwrapper: planar/box/spherical/cylindrical projections
+- MeshOperations: midpoint subdivision, face extrusion, edge bevel
+- Normal recomputation from face cross products
+- MeshEditPanel with target display and op controls
+- Edit mode selector (Vertex/Edge/Face)
+- 10 Playwright E2E tests
+
+## v26.1-15.0 (2026-08-18) - LTS Release
+
+### Added
+- Terrain heightmap editing (raise/smooth/flatten brushes)
+- Procedural terrain generation (4-octave value noise)
+- Terrain mesh builder with computed normals
+- Environment settings: gradient/solid/procedural sky types
+- Sky color pickers, fog controls (enable/density/color)
+- EnvironmentPanel UI
+- 12 Playwright E2E tests
+
+## v26.1-14.0 (2026-08-18) - LTS Release
+
+### Added
+- Node-based material editor with 9 node types
+- Socket click-to-connect with type validation
+- Shader graph compilation to GLSL (topological DFS)
+- Implicit conversions (float broadcast, vec3-to-vec4)
+- Compiled code preview and material save
+- 12 Playwright E2E tests
+
+## v26.1-13.0 (2026-08-17) - LTS Release
+
+### Added
+- Physics engine: AABB/sphere collision detection
+- RigidBody component with mass/velocity/angular velocity
+- Impulse-based collision response, gravity field
+- Fixed timestep stepping with raycast queries
+- Physics debug visualization toggle
+- Physics tests
+
+## v26.1-12.0 (2026-08-17) - LTS Release
+
+### Added
+- Component system (MeshFilter/MeshRenderer/Collider/Rigidbody/Camera/AudioSource)
+- Component panel in Inspector (add/remove/edit properties)
+- Prefab system (save node subtree, instantiate, overrides)
+- Script components with auto-invoked onUpdate
+- Component/prefab serialization
+
+## v26.1-11.0 (2026-08-17) - LTS Release
+
+### Added
+- Box select, shift+click multi-select, Ctrl+A select all
+- Multi-select transform operations
+- Scene view modes: Wireframe/Solid/Material Preview/Rendered
+- Selection outline rendering
+- Batch delete/duplicate operations
+
+## v26.1-10.0 (2026-08-16) - LTS Release
+
+### Added
+- Interactive translate gizmo (X/Y/Z arrows + plane handles)
+- Interactive rotate gizmo (axis rings)
+- Interactive scale gizmo (handles + uniform center)
+- Ray-test against gizmo handles, screen-space drag projection
+- Snap-to-grid with Ctrl, distance-scaled gizmo sizing
+- Hover highlight on axes
+
 ## v26.1-09.0 (2026-08-18) - LTS Release
 
 ### Added

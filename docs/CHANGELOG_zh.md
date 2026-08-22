@@ -1,5 +1,97 @@
 # 版本历史
 
+## v26.1-18.0 (2026-08-19) - LTS 发布
+
+### 新增
+- 插件系统 (PluginManager: 注册/注销/启用/禁用)
+- PluginContext API: registerPanel, registerTool, log, getSceneStats
+- 插件清单格式 (id/name/version/author/description)
+- 事件钩子 (onSceneLoad, onNodeSelect, onRender)
+- 管理器 UI 中内联渲染插件面板
+- 工具执行与编辑器控制台集成
+- 内置插件: 截图工具、CSV 导入器
+- 11 个 Playwright E2E 测试
+
+## v26.1-17.0 (2026-08-18) - LTS 发布
+
+### 新增
+- KeyframeV2 逐关键帧插值 (linear/bezier/step/ease-in/out/in-out)
+- 带切线手柄的 Hermite 样条求值
+- 骨骼绑定: 骨骼层级 + 人形预设 (7 骨骼)
+- 正向运动学世界位置计算
+- 解析式双骨骼 IK 求解器 (余弦定律)
+- CurveEditorPanel (剪辑管理和关键帧插入)
+- 12 个 Playwright E2E 测试
+
+## v26.1-16.0 (2026-08-18) - LTS 发布
+
+### 新增
+- UVUnwrapper: 平面/盒形/球面/圆柱投影
+- MeshOperations: 中点细分、面挤出、边倒角
+- 从面叉积重算法线
+- MeshEditPanel (目标显示和操作控件)
+- 编辑模式选择器 (顶点/边/面)
+- 10 个 Playwright E2E 测试
+
+## v26.1-15.0 (2026-08-18) - LTS 发布
+
+### 新增
+- 地形高度图编辑 (升高/平滑/展平笔刷)
+- 程序化地形生成 (4 倍频值噪声)
+- 地形网格构建器 (法线计算)
+- 环境设置: 渐变/纯色/程序化天空类型
+- 天空颜色拾取器、雾控制 (启用/密度/颜色)
+- EnvironmentPanel UI
+- 12 个 Playwright E2E 测试
+
+## v26.1-14.0 (2026-08-18) - LTS 发布
+
+### 新增
+- 节点式材质编辑器 (9 种节点类型)
+- Socket 点击连接与类型校验
+- 着色器图编译为 GLSL (拓扑 DFS)
+- 隐式转换 (float 广播、vec3 转 vec4)
+- 编译代码预览和材质保存
+- 12 个 Playwright E2E 测试
+
+## v26.1-13.0 (2026-08-17) - LTS 发布
+
+### 新增
+- 物理引擎: AABB/球体碰撞检测
+- RigidBody 组件 (质量/速度/角速度)
+- 基于冲量的碰撞响应、重力场
+- 固定时间步进与射线查询
+- 物理调试可视化开关
+- 物理测试
+
+## v26.1-12.0 (2026-08-17) - LTS 发布
+
+### 新增
+- 组件系统 (MeshFilter/MeshRenderer/Collider/Rigidbody/Camera/AudioSource)
+- 检查器中的组件面板 (添加/删除/编辑属性)
+- 预制体系统 (保存节点子树、实例化、覆盖)
+- 自动调用 onUpdate 的脚本组件
+- 组件/预制体序列化
+
+## v26.1-11.0 (2026-08-17) - LTS 发布
+
+### 新增
+- 框选、Shift+点击多选、Ctrl+A 全选
+- 多选变换操作
+- 场景视图模式: 线框/实体/材质预览/渲染
+- 选择轮廓渲染
+- 批量删除/复制操作
+
+## v26.1-10.0 (2026-08-16) - LTS 发布
+
+### 新增
+- 交互式移动 Gizmo (X/Y/Z 箭头 + 平面手柄)
+- 交互式旋转 Gizmo (轴环)
+- 交互式缩放 Gizmo (手柄 + 均匀缩放中心)
+- Gizmo 手柄射线测试、屏幕空间拖拽投影
+- Ctrl 吸附网格、随距离缩放的 Gizmo 尺寸
+- 轴悬停高亮
+
 ## v26.1-09.0 (2026-08-18) - LTS 发布
 
 ### 新增
