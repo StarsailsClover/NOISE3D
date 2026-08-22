@@ -11,6 +11,7 @@ import { ParticlePanel } from './panels/ParticlePanel';
 import { CodeEditorPanel } from './panels/CodeEditorPanel';
 import { MaterialEditorPanel } from './panels/MaterialEditorPanel';
 import { EnvironmentPanel } from './panels/EnvironmentPanel';
+import { MeshEditPanel } from './panels/MeshEditPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 export function App() {
@@ -34,6 +35,7 @@ export function App() {
         </div>
         <div className="app-right">
           <InspectorPanel />
+          <MeshEditPanel />
           <RenderSettingsPanel />
           <CodeEditorPanel />
           <MaterialEditorPanel />
