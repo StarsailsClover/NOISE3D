@@ -86,8 +86,9 @@ test.describe('NOISE3D v26.1-08.0 - WebGPU & Scripting', () => {
 
   test('version displays new format', async ({ page }) => {
     await page.goto('/?ws=rendering');
-    await expect(page.locator('.app-version')).toContainText('v26.1-19.0.RC');
+    await expect(page.locator('.app-version')).toContainText('v26.1-20.0.RC');
   });
 });
+
 
 

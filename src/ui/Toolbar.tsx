@@ -31,7 +31,7 @@ export function Toolbar() {
     <div className="main-toolbar">
       <div className="toolbar-group">
         <span className="app-title">NOISE3D</span>
-        <span className="app-version">v26.1-19.0.RC</span>
+        <span className="app-version">v26.1-20.0.RC</span>
         <span className="backend-badge">{backend.toUpperCase()}</span>
       </div>
       <div className="toolbar-separator" />
@@ -105,3 +105,4 @@ export function Toolbar() {
     </div>
   );
 }
+

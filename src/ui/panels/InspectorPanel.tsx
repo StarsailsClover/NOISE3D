@@ -5,6 +5,10 @@ import { MATERIAL_PRESETS } from '@renderer/Material';
 import { BUILTIN_COMPONENT_TYPES, getComponentDisplayName, getComponentPropertyLabels, type ComponentData } from '@scene/Component';
 
 export function InspectorPanel() {
+  const undoRevision = useEditorStore((s) => s.undoRevision);
+  void undoRevision;
+
+
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const scene = useEditorStore((s) => s.scene);
   const updateNodeTransform = useEditorStore((s) => s.updateNodeTransform);
@@ -497,3 +501,4 @@ function ComponentEditor({ nodeId, component, onRemove, onUpdate }: {
     </div>
   );
 }
+

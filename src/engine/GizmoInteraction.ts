@@ -3,271 +3,312 @@ import { Mat4 } from '@math/Mat4';
 import type { OrbitCamera } from '@engine/OrbitCamera';
 import type { GizmoMode } from '@engine/GizmoRenderer';
 
-export type GizmoAxis = 'x' | 'y' | 'z' | null;
+export type GizmoAxis = 'x' | 'y' | 'z';
+
+export interface GizmoHandle {
+  kind: 'axis' | 'plane' | 'ring';
+  axis: GizmoAxis;
+}
+
+const AXES: Record<GizmoAxis, Vec3> = {
+  x: new Vec3(1, 0, 0),
+  y: new Vec3(0, 1, 0),
+  z: new Vec3(0, 0, 1),
+};
+
+export const TRANSLATE_SNAP = 0.5;
+export const ROTATE_SNAP_DEG = 15;
+export const SCALE_SNAP = 0.1;
 
 interface DragState {
-  axis: GizmoAxis;
+  handle: GizmoHandle;
   startScreenX: number;
   startScreenY: number;
-  startValue: Vec3;
+  startPos: Vec3;
+  startRotation: Vec3;
+  startScale: Vec3;
   hitPoint: Vec3;
 }
 
 export class GizmoInteraction {
   private dragState: DragState | null = null;
-  private gizmoSize: number = 1.0;
+  private hover: GizmoHandle | null = null;
+
+  /** Desired world-space gizmo arm length so arms measure ~90px on screen. */
+  public worldScale: number = 1;
 
   get isDragging(): boolean {
     return this.dragState !== null;
   }
 
-  get currentAxis(): GizmoAxis {
-    return this.dragState?.axis ?? null;
+  get activeHandle(): GizmoHandle | null {
+    return this.dragState?.handle ?? null;
   }
 
-  get dragStartValue(): Vec3 | null {
-    return this.dragState?.startValue ?? null;
+  get hoverHandle(): GizmoHandle | null {
+    return this.dragState ? this.dragState.handle : this.hover;
+  }
+
+  get dragStartPos(): Vec3 | null {
+    return this.dragState?.startPos ?? null;
+  }
+
+  get dragStartRotation(): Vec3 | null {
+    return this.dragState?.startRotation ?? null;
+  }
+
+  get dragStartScale(): Vec3 | null {
+    return this.dragState?.startScale ?? null;
+  }
+
+  /** World-space arm length so the gizmo appears ~90 css px tall. */
+  computeWorldScale(cam: OrbitCamera, nodePos: Vec3, viewportHeightCss: number, fov: number): number {
+    const dist = Math.max(Vec3.sub(cam.position, nodePos).length(), 0.1);
+    const pxPerWorld = viewportHeightCss / (2 * dist * Math.tan(fov / 2));
+    return 45 / Math.max(pxPerWorld, 1e-6);
   }
 
   /**
-   * Returns the screen-space gizmo size in pixels, scaled to maintain constant visual size.
+   * Pick the gizmo part under the cursor.
+   * Priority: rings (rotate) > plane handles > axes.
    */
-  getGizmoScreenSize(cam: OrbitCamera): number {
-    const dist = cam.distance;
-    const baseSize = 80; // base pixel size at distance 1
-    return (baseSize * this.gizmoSize) / Math.max(dist, 0.1);
-  }
-
-  /**
-   * Pick which gizmo axis the mouse is over.
-   * Returns the axis name or null if not hovering any axis.
-   */
-  pickAxis(
-    screenX: number,
-    screenY: number,
+  pickHandle(
+    screenXCss: number,
+    screenYCss: number,
     nodePos: Vec3,
     cam: OrbitCamera,
-    viewportWidth: number,
-    viewportHeight: number,
+    viewportWCss: number,
+    viewportHCss: number,
+    fov: number,
     mode: GizmoMode,
-  ): GizmoAxis {
-    const dpr = window.devicePixelRatio || 1;
-    const sx = screenX * dpr;
-    const sy = screenY * dpr;
-    const w = viewportWidth * dpr;
-    const h = viewportHeight * dpr;
+  ): GizmoHandle | null {
+    this.worldScale = this.computeWorldScale(cam, nodePos, viewportHCss, fov);
+    const s = this.worldScale;
 
-    // Project the node position to screen
-    const nodeScreen = this.worldToScreen(nodePos, cam, w, h);
-    if (!nodeScreen) return null;
-
-    const screenSize = this.getGizmoScreenSize(cam);
-    const dx = sx - nodeScreen.x;
-    const dy = sy - nodeScreen.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // For translate/scale: check if mouse is near an axis line
-    // For rotate: check if mouse is near a ring
-    const threshold = 12; // pixel threshold
+    const center = this.projectPoint(nodePos, cam, viewportWCss, viewportHCss);
+    if (!center) return null;
+    const mx = screenXCss - center.x;
+    const my = screenYCss - center.y;
 
     if (mode === 'rotate') {
-      // Ring radius in screen pixels
-      const ringRadius = screenSize;
-      if (Math.abs(dist - ringRadius) < threshold * 1.5) {
-        // Determine which ring by angle
-        const angle = Math.atan2(dy, dx);
-        // X axis ring is around the X axis (red) - detected by vertical screen angle
-        // Simplified: pick nearest axis by screen-space angle
-        const deg = (angle * 180) / Math.PI;
-        if (Math.abs(deg) < 45 || Math.abs(deg) > 135) return 'x';
-        if (deg >= 45 && deg < 135) return 'y';
-        return 'z';
+      // Convert world-space ring radius to css px for picking
+      const camDist = Math.max(Vec3.sub(cam.position, nodePos).length(), 0.1);
+      const pxPerWorld = viewportHCss / (2 * camDist * Math.tan(fov / 2));
+      const ringPx = s * pxPerWorld; // == arm length in px (~45)
+      const dist = Math.hypot(mx, my);
+      if (Math.abs(dist - ringPx) < 10 || Math.abs(dist - ringPx * 1.28) < 10) {
+        return { kind: 'ring', axis: angleToAxis(Math.atan2(-my, mx)) };
       }
       return null;
     }
 
-    // For translate/scale: project axis endpoints to screen and check proximity
-    const axes: { name: GizmoAxis; dir: Vec3 }[] = [
-      { name: 'x', dir: new Vec3(1, 0, 0) },
-      { name: 'y', dir: new Vec3(0, 1, 0) },
-      { name: 'z', dir: new Vec3(0, 0, 1) },
-    ];
-
-    let bestAxis: GizmoAxis = null;
-    let bestDist = threshold;
-
-    for (const ax of axes) {
-      const worldEnd = new Vec3(
-        nodePos.x + ax.dir.x * this.gizmoSize,
-        nodePos.y + ax.dir.y * this.gizmoSize,
-        nodePos.z + ax.dir.z * this.gizmoSize,
-      );
-      const endScreen = this.worldToScreen(worldEnd, cam, w, h);
-      if (!endScreen) continue;
-
-      // Distance from mouse to the line segment (nodeScreen -> endScreen)
-      const lineDist = pointToSegmentDist(sx, sy, nodeScreen.x, nodeScreen.y, endScreen.x, endScreen.y);
-      if (lineDist < bestDist) {
-        bestDist = lineDist;
-        bestAxis = ax.name;
+    // Plane handles first (they sit near the center)
+    const planePairs: [GizmoAxis, GizmoAxis][] = [['x', 'y'], ['x', 'z'], ['y', 'z']];
+    const quadT = s * 0.42;
+    for (const [a, b] of planePairs) {
+      const ua = AXES[a];
+      const ub = AXES[b];
+      const corners = [
+        new Vec3(nodePos.x, nodePos.y, nodePos.z),
+        new Vec3(nodePos.x + ua.x * quadT, nodePos.y + ua.y * quadT, nodePos.z + ua.z * quadT),
+        new Vec3(
+          nodePos.x + (ua.x + ub.x) * quadT,
+          nodePos.y + (ua.y + ub.y) * quadT,
+          nodePos.z + (ua.z + ub.z) * quadT,
+        ),
+        new Vec3(nodePos.x + ub.x * quadT, nodePos.y + ub.y * quadT, nodePos.z + ub.z * quadT),
+      ];
+      const scr = corners.map((p) => this.projectPoint(p, cam, viewportWCss, viewportHCss));
+      if (scr.some((p) => p === null)) continue;
+      if (pointInQuad(screenXCss, screenYCss, scr as { x: number; y: number }[])) {
+        // Name plane by its two axes; report primary axis as the first one.
+        const primary: GizmoAxis = a === 'x' || b === 'x' ? 'x' : 'y';
+        void primary;
+        return { kind: 'plane', axis: a };
       }
     }
 
-    return bestAxis;
+    // Axes
+    let best: GizmoHandle | null = null;
+    let bestDist = 10;
+    for (const ax of ['x', 'y', 'z'] as GizmoAxis[]) {
+      const dir = AXES[ax];
+      const end = new Vec3(nodePos.x + dir.x * s, nodePos.y + dir.y * s, nodePos.z + dir.z * s);
+      const endScr = this.projectPoint(end, cam, viewportWCss, viewportHCss);
+      if (!endScr) continue;
+      const d = pointToSegmentDist(screenXCss, screenYCss, center.x, center.y, endScr.x, endScr.y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = { kind: 'axis', axis: ax };
+      }
+    }
+    return best;
   }
 
-  /**
-   * Begin dragging on a gizmo axis.
-   */
+  setHover(h: GizmoHandle | null): void {
+    this.hover = h;
+  }
+
+  /** True while pointer is over any interactive gizmo part. */
+  get isHovering(): boolean {
+    return this.hover !== null || this.isDragging;
+  }
+
   startDrag(
-    axis: GizmoAxis,
-    screenX: number,
-    screenY: number,
+    handle: GizmoHandle,
+    screenXCss: number,
+    screenYCss: number,
     startPos: Vec3,
+    startRotation: Vec3,
+    startScale: Vec3,
     cam: OrbitCamera,
-    viewportWidth: number,
-    viewportHeight: number,
+    viewportWCss: number,
+    viewportHCss: number,
   ): void {
-    const dpr = window.devicePixelRatio || 1;
-    // Compute the world hit point on the gizmo axis plane
-    const hitPoint = this.screenToWorldOnPlane(
-      screenX * dpr, screenY * dpr,
-      viewportWidth * dpr, viewportHeight * dpr,
-      startPos, cam,
-    ) ?? startPos.clone();
+    const hit =
+      this.screenToWorldOnPlane(screenXCss, screenYCss, viewportWCss, viewportHCss, startPos, cam) ??
+      startPos.clone();
     this.dragState = {
-      axis,
-      startScreenX: screenX,
-      startScreenY: screenY,
-      startValue: startPos.clone(),
-      hitPoint,
+      handle,
+      startScreenX: screenXCss,
+      startScreenY: screenYCss,
+      startPos: startPos.clone(),
+      startRotation: startRotation.clone(),
+      startScale: startScale.clone(),
+      hitPoint: hit,
     };
   }
 
-  /**
-   * Compute the drag delta for translate mode.
-   */
+  /** Translate delta masked by the dragged handle. Ctrl snaps to TRANSLATE_SNAP grid. */
   getTranslateDelta(
-    screenX: number,
-    screenY: number,
+    screenXCss: number,
+    screenYCss: number,
     cam: OrbitCamera,
-    viewportWidth: number,
-    viewportHeight: number,
+    viewportWCss: number,
+    viewportHCss: number,
+    snap: boolean,
   ): Vec3 | null {
     if (!this.dragState) return null;
-    const dpr = window.devicePixelRatio || 1;
-    const sx = screenX * dpr;
-    const sy = screenY * dpr;
-    const w = viewportWidth * dpr;
-    const h = viewportHeight * dpr;
+    const hit = this.screenToWorldOnPlane(screenXCss, screenYCss, viewportWCss, viewportHCss, this.dragState.startPos, cam);
+    if (!hit) return null;
+    let delta = Vec3.sub(hit, this.dragState.hitPoint);
 
-    // Project the current mouse position onto the plane through the start point
-    // perpendicular to the camera forward direction
-    const newHit = this.screenToWorldOnPlane(sx, sy, w, h, this.dragState.startValue, cam);
-    if (!newHit) return null;
+    const h = this.dragState.handle;
+    if (h.kind === 'axis') {
+      const dir = AXES[h.axis];
+      const mag = Vec3.dot(delta, dir);
+      delta = Vec3.scale(dir, mag);
+    } else if (h.kind === 'plane') {
+      const pair = planePairFor(h.axis);
+      const du = Vec3.dot(delta, AXES[pair[0]]);
+      const dv = Vec3.dot(delta, AXES[pair[1]]);
+      delta = Vec3.add(Vec3.scale(AXES[pair[0]], du), Vec3.scale(AXES[pair[1]], dv));
+    }
 
-    const delta = Vec3.sub(newHit, this.dragState.hitPoint);
-
-    // Mask to only the dragged axis
-    if (this.dragState.axis === 'x') return new Vec3(delta.x, 0, 0);
-    if (this.dragState.axis === 'y') return new Vec3(0, delta.y, 0);
-    if (this.dragState.axis === 'z') return new Vec3(0, 0, delta.z);
+    if (snap) {
+      delta = new Vec3(
+        Math.round(delta.x / TRANSLATE_SNAP) * TRANSLATE_SNAP,
+        Math.round(delta.y / TRANSLATE_SNAP) * TRANSLATE_SNAP,
+        Math.round(delta.z / TRANSLATE_SNAP) * TRANSLATE_SNAP,
+      );
+    }
     return delta;
   }
 
-  /**
-   * Compute the drag delta for scale mode.
-   */
+  /** Scale multipliers masked by handle. Ctrl snaps ratio to SCALE_SNAP steps. */
   getScaleDelta(
-    screenX: number,
-    screenY: number,
+    screenXCss: number,
+    screenYCss: number,
     cam: OrbitCamera,
-    viewportWidth: number,
-    viewportHeight: number,
+    viewportWCss: number,
+    viewportHCss: number,
+    snap: boolean,
   ): Vec3 | null {
     if (!this.dragState) return null;
-    const dpr = window.devicePixelRatio || 1;
-    const sx = screenX * dpr;
-    const sy = screenY * dpr;
-    const w = viewportWidth * dpr;
-    const h = viewportHeight * dpr;
+    const hit = this.screenToWorldOnPlane(screenXCss, screenYCss, viewportWCss, viewportHCss, this.dragState.startPos, cam);
+    if (!hit) return null;
 
-    const newHit = this.screenToWorldOnPlane(sx, sy, w, h, this.dragState.startValue, cam);
-    if (!newHit) return null;
+    const h = this.dragState.handle;
+    const axisDir = h.kind === 'plane' ? null : AXES[h.axis];
+    const startDist = Vec3.sub(this.dragState.hitPoint, this.dragState.startPos);
+    const curDist = Vec3.sub(hit, this.dragState.startPos);
 
-    const startDist = Vec3.sub(this.dragState.hitPoint, this.dragState.startValue);
-    const currentDist = Vec3.sub(newHit, this.dragState.startValue);
-
-    let ratio: number;
-    if (this.dragState.axis === 'x') {
-      ratio = Math.abs(startDist.x) > 0.001 ? currentDist.x / startDist.x : 1;
-    } else if (this.dragState.axis === 'y') {
-      ratio = Math.abs(startDist.y) > 0.001 ? currentDist.y / startDist.y : 1;
-    } else if (this.dragState.axis === 'z') {
-      ratio = Math.abs(startDist.z) > 0.001 ? currentDist.z / startDist.z : 1;
+    let ratio = 1;
+    if (axisDir) {
+      const s0 = Vec3.dot(startDist, axisDir);
+      const s1 = Vec3.dot(curDist, axisDir);
+      ratio = Math.abs(s0) > 0.001 ? s1 / s0 : 1;
     } else {
-      ratio = 1;
+      const l0 = startDist.length();
+      const l1 = curDist.length();
+      ratio = l0 > 0.001 ? l1 / l0 : 1;
     }
+    if (snap) {
+      ratio = Math.max(0.05, Math.round(ratio / SCALE_SNAP) * SCALE_SNAP);
+    }
+    ratio = Math.max(0.01, ratio);
 
-    if (this.dragState.axis === 'x') return new Vec3(ratio, 1, 1);
-    if (this.dragState.axis === 'y') return new Vec3(1, ratio, 1);
-    if (this.dragState.axis === 'z') return new Vec3(1, 1, ratio);
+    if (h.kind === 'axis') {
+      if (h.axis === 'x') return new Vec3(ratio, 1, 1);
+      if (h.axis === 'y') return new Vec3(1, ratio, 1);
+      return new Vec3(1, 1, ratio);
+    }
     return new Vec3(ratio, ratio, ratio);
   }
 
-  /**
-   * Compute the rotation delta in radians.
-   */
+  /** Signed rotation delta (radians) around the picked axis. Ctrl snaps to ROTATE_SNAP_DEG. */
   getRotateDelta(
-    screenX: number,
-    screenY: number,
+    screenXCss: number,
+    screenYCss: number,
     cam: OrbitCamera,
-    viewportWidth: number,
-    viewportHeight: number,
+    viewportWCss: number,
+    viewportHCss: number,
+    snap: boolean,
   ): number {
     if (!this.dragState) return 0;
-    const dpr = window.devicePixelRatio || 1;
-    const w = viewportWidth * dpr;
-    const h = viewportHeight * dpr;
-
-    // Project the node center to screen
-    const center = this.worldToScreen(this.dragState.startValue, cam, w, h);
+    const center = this.projectPoint(this.dragState.startPos, cam, viewportWCss, viewportHCss);
     if (!center) return 0;
 
-    const sx = screenX * dpr;
-    const sy = screenY * dpr;
+    const startAngle = Math.atan2(this.dragState.startScreenY - center.y, this.dragState.startScreenX - center.x);
+    const curAngle = Math.atan2(screenYCsslToCenter(screenYCss, center.y), screenXCsslToCenter(screenXCss, center.x));
 
-    // Compute angles from center to start and current mouse positions
-    const startAngle = Math.atan2(
-      (this.dragState.startScreenY * dpr) - center.y,
-      (this.dragState.startScreenX * dpr) - center.x,
-    );
-    const currentAngle = Math.atan2(sy - center.y, sx - center.x);
-
-    let delta = currentAngle - startAngle;
-    // Normalize to [-PI, PI]
+    let delta = curAngle - startAngle;
     while (delta > Math.PI) delta -= Math.PI * 2;
     while (delta < -Math.PI) delta += Math.PI * 2;
+    delta = -delta;
 
-    // Snap to 15-degree increments with Ctrl
-    // (snapping handled by caller)
-
-    // Negate for intuitive rotation direction
-    return -delta;
+    if (snap) {
+      const step = (ROTATE_SNAP_DEG * Math.PI) / 180;
+      delta = Math.round(delta / step) * step;
+    }
+    return delta;
   }
 
   endDrag(): void {
     this.dragState = null;
   }
 
+  cancelDrag(): void {
+    this.dragState = null;
+  }
+
+  projectPoint(
+    worldPos: Vec3,
+    cam: OrbitCamera,
+    viewportWCss: number,
+    viewportHCss: number,
+  ): { x: number; y: number } | null {
+    return this.worldToScreen(worldPos, cam, viewportWCss, viewportHCss);
+  }
+
   private worldToScreen(
     worldPos: Vec3,
     cam: OrbitCamera,
-    viewportWidth: number,
-    viewportHeight: number,
+    viewportWidthCss: number,
+    viewportHeightCss: number,
   ): { x: number; y: number } | null {
     const view = Mat4.lookAt(cam.position, cam.target, new Vec3(0, 1, 0));
-    const aspect = viewportWidth / Math.max(1, viewportHeight);
+    const aspect = viewportWidthCss / Math.max(1, viewportHeightCss);
     const proj = cam.getProjectionMatrix(aspect);
     const vp = Mat4.multiply(proj, view);
 
@@ -283,8 +324,8 @@ export class GizmoInteraction {
     const ndcY = (d[1] * x + d[5] * y + d[9] * z + d[13]) * invW;
 
     return {
-      x: ((ndcX + 1) * 0.5) * viewportWidth,
-      y: ((1 - ndcY) * 0.5) * viewportHeight,
+      x: ((ndcX + 1) * 0.5) * viewportWidthCss,
+      y: ((1 - ndcY) * 0.5) * viewportHeightCss,
     };
   }
 
@@ -322,6 +363,41 @@ export class GizmoInteraction {
       nearWorld.z + rayDir.z * t,
     );
   }
+}
+
+function screenYCsslToCenter(sy: number, centerY: number): number {
+  return sy - centerY;
+}
+function screenXCsslToCenter(sx: number, centerX: number): number {
+  return sx - centerX;
+}
+
+function planePairFor(primary: GizmoAxis): [GizmoAxis, GizmoAxis] {
+  if (primary === 'x') return ['x', 'y'];
+  if (primary === 'y') return ['y', 'z'];
+  return ['x', 'z'];
+}
+
+function angleToAxis(angleRad: number): GizmoAxis {
+  const deg = ((angleRad * 180) / Math.PI + 360) % 180;
+  if (deg < 30 || deg >= 150) return 'z';
+  if (deg < 60) return 'y';
+  if (deg < 120) return 'z';
+  return 'y';
+}
+
+function pointInQuad(px: number, py: number, q: { x: number; y: number }[]): boolean {
+  let sign = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = q[i];
+    const b = q[(i + 1) % 4];
+    const cross = (b.x - a.x) * (py - a.y) - (b.y - a.y) * (px - a.x);
+    if (Math.abs(cross) < 1e-9) continue;
+    const s = Math.sign(cross);
+    if (sign === 0) sign = s;
+    else if (s !== sign) return false;
+  }
+  return true;
 }
 
 function transformPoint(m: Mat4, x: number, y: number, z: number): Vec3 {

@@ -2,6 +2,7 @@ import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
 import { Scene } from '@scene/Scene';
 import { MAX_LIGHTS } from '@scene/Light';
+import { GizmoRenderer } from '@engine/GizmoRenderer';
 import { MeshData, GeometryGenerator } from './Geometry';
 import { Material, createDefaultMaterial } from './Material';
 import {
@@ -44,6 +45,16 @@ export class Renderer {
   public near: number = 0.1;
   public far: number = 1000;
   public projectionMatrix: Mat4 | null = null;
+
+  /** Per-frame gizmo overlay description (set by ViewportPanel). */
+  public gizmoVisual: {
+    position: Vec3;
+    mode: 'translate' | 'rotate' | 'scale';
+    hover: { kind: string; axis: 'x' | 'y' | 'z' } | null;
+    active: { kind: string; axis: 'x' | 'y' | 'z' } | null;
+    worldScale: number;
+  } | null = null;
+  private gizmoRendererInst: import('@engine/GizmoRenderer').GizmoRenderer | null = null;
 
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
   public ambient: Vec3 = new Vec3(0.2, 0.2, 0.2);
@@ -435,6 +446,24 @@ export class Renderer {
           gl.enable(gl.DEPTH_TEST);
         }
       }
+    }
+
+    // Gizmo overlay (translate/scale/rotate handles)
+    if (this.gizmoVisual && this.selectedNodeId !== null) {
+      if (!this.gizmoRendererInst) {
+        this.gizmoRendererInst = new GizmoRenderer(this.gl, LINE_VERTEX_SHADER, LINE_FRAGMENT_SHADER);
+      }
+      gl.disable(gl.DEPTH_TEST);
+      this.gizmoRendererInst.renderGizmo(
+        this.gizmoVisual.position,
+        view,
+        projection,
+        this.gizmoVisual.mode,
+        this.gizmoVisual.hover,
+        this.gizmoVisual.active,
+        this.gizmoVisual.worldScale,
+      );
+      gl.enable(gl.DEPTH_TEST);
     }
   }
 

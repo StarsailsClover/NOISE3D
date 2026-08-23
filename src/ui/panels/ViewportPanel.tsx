@@ -1,10 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { Renderer } from '@renderer/Renderer';
 import { WebGPURenderer, isWebGPUAvailable } from '@renderer/WebGPURenderer';
 import type { IRenderer } from '@renderer/RendererFactory';
 import { Scene } from '@scene/Scene';
 import { OrbitCamera } from '@engine/OrbitCamera';
+import { GizmoInteraction } from '@engine/GizmoInteraction';
 import { Ray } from '@engine/Ray';
 import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
@@ -18,6 +19,9 @@ export function ViewportPanel() {
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const dragModeRef = useRef<'rotate' | 'pan' | 'none'>('none');
+  const gizmoRef = useRef<GizmoInteraction>(new GizmoInteraction());
+  const gizmoDraggingRef = useRef(false);
+  const [cursor, setCursor] = useState<'default' | 'grab' | 'grabbing'>('default');
 
   const scene = useEditorStore((s) => s.scene);
   const showGrid = useEditorStore((s) => s.showGrid);
@@ -93,6 +97,24 @@ export function ViewportPanel() {
       const aspect = canvas.width / Math.max(1, canvas.height);
       r.projectionMatrix = cam.getProjectionMatrix(aspect);
 
+      // Gizmo overlay description
+      const stNow = useEditorStore.getState();
+      const gNode = stNow.selectedNodeId !== null ? scene.getNode(stNow.selectedNodeId) : undefined;
+      if (gNode && gNode.type !== 'empty') {
+        const rectCss = canvas.getBoundingClientRect();
+        const ws = gizmoRef.current.computeWorldScale(cam, gNode.position, rectCss.height, cam.fov);
+        gizmoRef.current.worldScale = ws;
+        (r as any).gizmoVisual = {
+          position: gNode.position,
+          mode: stNow.gizmoMode,
+          hover: gizmoRef.current.hoverHandle as never,
+          active: gizmoRef.current.activeHandle as never,
+          worldScale: ws,
+        };
+      } else {
+        (r as any).gizmoVisual = null;
+      }
+
       for (const [id, mat] of materials) {
         r.setMaterial(id, mat);
       }
@@ -148,6 +170,38 @@ export function ViewportPanel() {
     }
   }, [frameSelectedTrigger, selectedNodeId, scene]);
 
+  // Test/debug hooks: gizmo state + world->screen projection (css px)
+  useEffect(() => {
+    const api = {
+      state: () => ({
+        hover: gizmoRef.current.hoverHandle,
+        active: gizmoRef.current.activeHandle,
+        dragging: gizmoRef.current.isDragging,
+      }),
+      pick: (xCss: number, yCss: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { error: 'no canvas' };
+        const st = useEditorStore.getState();
+        const node = st.selectedNodeId !== null ? st.scene.getNode(st.selectedNodeId) : undefined;
+        if (!node) return { error: 'no node' };
+        const r = canvas.getBoundingClientRect();
+        const h = gizmoRef.current.pickHandle(
+          xCss, yCss, node.position, cameraRef.current,
+          r.width, r.height, cameraRef.current.fov, st.gizmoMode,
+        );
+        return { handle: h, ws: gizmoRef.current.worldScale, mode: st.gizmoMode };
+      },
+      project: (x: number, y: number, z: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return null;
+        const r = canvas.getBoundingClientRect();
+        return gizmoRef.current.projectPoint(new Vec3(x, y, z), cameraRef.current, r.width, r.height);
+      },
+    };
+    (window as any).__noise3d_gizmo = api;
+    return () => { delete (window as any).__noise3d_gizmo; };
+  }, []);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -156,43 +210,123 @@ export function ViewportPanel() {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      isDraggingRef.current = true;
       lastMouseRef.current = { x, y };
 
       if (e.button === 0) {
+        // Gizmo handles take priority over object picking
+        const st0 = useEditorStore.getState();
+        const node = st0.selectedNodeId !== null ? scene.getNode(st0.selectedNodeId) : undefined;
+        if (node && node.type !== 'empty') {
+          const cam = cameraRef.current;
+          const handle = gizmoRef.current.pickHandle(
+            x, y, node.position, cam, rect.width, rect.height, cam.fov, st0.gizmoMode,
+          );
+          if (handle) {
+            st0.takeSnapshot(); // one undo entry per gesture
+            gizmoRef.current.startDrag(
+              handle, x, y,
+              node.position, node.rotation, node.scale,
+              cam, rect.width, rect.height,
+            );
+            gizmoDraggingRef.current = true;
+            setCursor('grabbing');
+            e.preventDefault();
+            return;
+          }
+        }
         dragModeRef.current = 'none';
+        isDraggingRef.current = true;
         pickObject(x, y, rect.width, rect.height);
       } else if (e.button === 1 || e.button === 2) {
+        isDraggingRef.current = true;
         dragModeRef.current = e.button === 1 ? 'pan' : 'rotate';
         e.preventDefault();
       }
     },
-    [],
+    [scene],
   );
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isDraggingRef.current) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+
+      // --- Gizmo drag applies transform ---
+      if (gizmoDraggingRef.current && gizmoRef.current.isDragging) {
+        const st = useEditorStore.getState();
+        const snap = e.ctrlKey || e.metaKey;
+        const selId = st.selectedNodeId;
+        if (selId === null) return;
+        const cam = cameraRef.current;
+        const gi = gizmoRef.current;
+
+        if (st.gizmoMode === 'translate') {
+          const d = gi.getTranslateDelta(x, y, cam, rect.width, rect.height, snap);
+          const p0 = gi.dragStartPos;
+          if (d && p0) st.updateNodeTransform(selId, Vec3.add(p0, d));
+        } else if (st.gizmoMode === 'scale') {
+          const m = gi.getScaleDelta(x, y, cam, rect.width, rect.height, snap);
+          const s0 = gi.dragStartScale;
+          if (m && s0) {
+            st.updateNodeTransform(selId, undefined, undefined, new Vec3(
+              Math.max(0.01, s0.x * m.x),
+              Math.max(0.01, s0.y * m.y),
+              Math.max(0.01, s0.z * m.z),
+            ));
+          }
+        } else {
+          const ang = gi.getRotateDelta(x, y, cam, rect.width, rect.height, snap);
+          const r0 = gi.dragStartRotation;
+          const h = gi.activeHandle;
+          if (r0 && h) {
+            const rot = r0.clone();
+            if (h.axis === 'x') rot.x = r0.x + ang;
+            else if (h.axis === 'y') rot.y = r0.y + ang;
+            else rot.z = r0.z + ang;
+            st.updateNodeTransform(selId, undefined, rot);
+          }
+        }
+        lastMouseRef.current = { x, y };
+        return;
+      }
+
       const dx = x - lastMouseRef.current.x;
       const dy = y - lastMouseRef.current.y;
-      lastMouseRef.current = { x, y };
 
       const cam = cameraRef.current;
-      if (dragModeRef.current === 'rotate') {
+      if (isDraggingRef.current && dragModeRef.current === 'rotate') {
         cam.rotate(dx, dy);
-      } else if (dragModeRef.current === 'pan') {
+      } else if (isDraggingRef.current && dragModeRef.current === 'pan') {
         cam.pan(dx, dy, rect.width, rect.height);
+      } else {
+        // Hover detection over selected node's gizmo
+        const st = useEditorStore.getState();
+        const node = st.selectedNodeId !== null ? st.scene.getNode(st.selectedNodeId) : undefined;
+        let handle: { kind: string; axis: 'x' | 'y' | 'z' } | null = null;
+        if (node && node.type !== 'empty') {
+          handle = gizmoRef.current.pickHandle(
+            x, y, node.position, cam, rect.width, rect.height, cam.fov, st.gizmoMode,
+          ) as { kind: string; axis: 'x' | 'y' | 'z' } | null;
+        }
+        gizmoRef.current.setHover(handle as never);
+        const nextCursor = handle ? 'grab' : 'default';
+        setCursor((c) => (c === nextCursor || c === 'grabbing' ? c : nextCursor));
       }
+
+      lastMouseRef.current = { x, y };
     },
-    [],
+    [scene],
   );
 
   const handleMouseUp = useCallback(() => {
+    if (gizmoDraggingRef.current) {
+      gizmoRef.current.endDrag();
+      gizmoDraggingRef.current = false;
+      setCursor('default');
+    }
     isDraggingRef.current = false;
     dragModeRef.current = 'none';
   }, []);
@@ -252,6 +386,7 @@ export function ViewportPanel() {
       <canvas
         ref={canvasRef}
         className="viewport-canvas"
+        style={{ cursor }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

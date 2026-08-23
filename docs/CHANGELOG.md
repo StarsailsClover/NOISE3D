@@ -1,5 +1,25 @@
 # Version History
 
+## v26.1-20.0 (2026-08-20) - LTS Release
+
+### Added
+- Gizmo interaction fully wired into viewport (v10 classes were orphaned)
+- Plane handles (XY/XZ/YZ quads) for two-axis translate with correct masking
+- Screen-facing outer ring for rotate mode + three axis rings
+- Hover highlighting: hovered part brightens, cursor becomes grab; dragging = grabbing
+- Undo coalescing: exactly one snapshot per drag gesture (Blender modal-operator rule)
+- Ctrl snapping: 0.5 units translate / 15-degree rotate / 0.1 scale steps
+- Constant screen-size gizmo: world scale computed per-frame from camera distance (arms ~45 css px)
+- `__noise3d_gizmo` debug hooks (state/pick/project) enabling deterministic E2E picking tests
+
+### Fixed
+- Rotate ring pick used world-units radius as pixels (never hit); now converts via pxPerWorld
+- updateNodeTransform bumps undoRevision so Inspector reflects programmatic drags live
+
+### Tested
+- 7 new deterministic gizmo E2E tests (hover/cursor/translate/undo-count/snap/plane/ring/scale)
+- Full suite: 300 passed, 0 failed
+
 ## v26.1-19.0 (2026-08-20) - LTS Release
 
 ### Added

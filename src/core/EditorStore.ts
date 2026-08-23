@@ -464,7 +464,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (position) node.position.copy(position);
     if (rotation) node.rotation.copy(rotation);
     if (scale) node.scale.copy(scale);
-    set({});
+    // Bump revision so panels observing transforms re-render
+    set({ undoRevision: get().undoRevision + 1 });
   },
 
   renameNode: (id, name) => {
