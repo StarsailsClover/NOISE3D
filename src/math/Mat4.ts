@@ -66,19 +66,17 @@ export class Mat4 {
   }
 
   static lookAt(eye: Vec3, target: Vec3, up: Vec3): Mat4 {
-    const z = Vec3.normalize(Vec3.sub(eye, target));
-    const x = Vec3.normalize(Vec3.cross(up, z));
-    const y = Vec3.cross(z, x);
+    const z = Vec3.normalize(Vec3.sub(eye, target)); // backward
+    const x = Vec3.normalize(Vec3.cross(up, z));     // right
+    const y = Vec3.cross(z, x);                      // true up
+
+    // Column-major view matrix: rotation stored TRANSPOSED (rows = basis
+    // vectors) so that V maps world -> camera: V·eye == origin.
     const m = new Float32Array(16);
-    m[0] = x.x;
-    m[1] = x.y;
-    m[2] = x.z;
-    m[4] = y.x;
-    m[5] = y.y;
-    m[6] = y.z;
-    m[8] = z.x;
-    m[9] = z.y;
-    m[10] = z.z;
+    m[0] = x.x; m[4] = x.y; m[8]  = x.z;
+    m[1] = y.x; m[5] = y.y; m[9]  = y.z;
+    m[2] = z.x; m[6] = z.y; m[10] = z.z;
+    m[3] = 0;   m[7] = 0;   m[11] = 0;
     m[12] = -Vec3.dot(x, eye);
     m[13] = -Vec3.dot(y, eye);
     m[14] = -Vec3.dot(z, eye);
@@ -137,19 +135,16 @@ export class Mat4 {
   }
 
   static multiply(a: Mat4, b: Mat4): Mat4 {
-    const out = new Float32Array(16);
-    const aData = a.data;
-    const bData = b.data;
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 4; j++) {
-        out[i * 4 + j] =
-          aData[0 * 4 + j] * bData[i * 4 + 0] +
-          aData[1 * 4 + j] * bData[i * 4 + 1] +
-          aData[2 * 4 + j] * bData[i * 4 + 2] +
-          aData[3 * 4 + j] * bData[i * 4 + 3];
+    const o = new Float32Array(16);
+    // Column-major: out(col c, row r) = Σ_k A(r,k) * B(k,c)
+    for (let c = 0; c < 4; c++) {
+      for (let r = 0; r < 4; r++) {
+        let s = 0;
+        for (let k = 0; k < 4; k++) s += a.data[k * 4 + r] * b.data[c * 4 + k];
+        o[c * 4 + r] = s;
       }
     }
-    return new Mat4(out);
+    return new Mat4(o);
   }
 
   static fromTRS(

@@ -104,7 +104,7 @@ export class GizmoInteraction {
 
     // Plane handles first (they sit near the center)
     const planePairs: [GizmoAxis, GizmoAxis][] = [['x', 'y'], ['x', 'z'], ['y', 'z']];
-    const quadT = s * 0.42;
+    const quadT = s * 0.30;
     for (const [a, b] of planePairs) {
       const ua = AXES[a];
       const ub = AXES[b];
@@ -428,3 +428,4 @@ function pointToSegmentDist(
   const cy = ay + t * dy;
   return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
 }
+

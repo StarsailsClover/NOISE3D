@@ -36,7 +36,9 @@ export function MaterialEditorPanel() {
 
   const addNode = (type: ShaderNodeType) => {
     setGraph((g) => {
-      const node = createNode(type, 40 + Math.random() * 120, 40 + Math.random() * 100);
+      // Deterministic stacking: predictable layout, no overlapping cards
+      const idx = g.nodes.length;
+      const node = createNode(type, 24, 30 + idx * 62);
       return { ...g, nodes: [...g.nodes, node] };
     });
   };

@@ -287,7 +287,7 @@ export class GizmoRenderer {
 
     // Plane quads first (behind axes), translate mode only
     if (mode !== 'rotate') {
-      const q = scale * 0.42;
+      const q = scale * 0.30;
       const planes: { u: Vec3; v: Vec3; axis: 'x' | 'y' | 'z'; base: [number, number, number, number] }[] = [
         { u: new Vec3(1, 0, 0), v: new Vec3(0, 1, 0), axis: 'x', base: [1, 0.2, 0.2, 0.22] },
         { u: new Vec3(1, 0, 0), v: new Vec3(0, 0, 1), axis: 'y', base: [0.2, 1, 0.2, 0.22] },
@@ -400,3 +400,4 @@ function camForward(_view: Mat4): Vec3 {
   const inv = _view.invert();
   return new Vec3(inv.data[12], inv.data[13], inv.data[14]);
 }
+

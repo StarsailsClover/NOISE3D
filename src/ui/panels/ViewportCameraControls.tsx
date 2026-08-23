@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 
+type ViewMode = 'material' | 'wireframe' | 'solid' | 'rendered';
+
+const VIEW_MODES: { id: ViewMode; title: string; label: string }[] = [
+  { id: 'material', title: 'Material Preview', label: 'Mat' },
+  { id: 'wireframe', title: 'Wireframe', label: 'Wire' },
+  { id: 'solid', title: 'Solid (Unlit)', label: 'Solid' },
+  { id: 'rendered', title: 'Rendered', label: 'Render' },
+];
+
 interface ViewportCameraControlsProps {
   cameraRef: React.MutableRefObject<any>;
+  onFrameAll: () => void;
 }
 
-export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProps) {
+export function ViewportCameraControls({ cameraRef, onFrameAll }: ViewportCameraControlsProps) {
   const setCameraPos = useEditorStore((s) => s.setCameraPos);
   const setCameraTarget = useEditorStore((s) => s.setCameraTarget);
+  const [projectionMode, setProjectionMode] = useState<'perspective' | 'orthographic'>('perspective');
   const sceneViewMode = useEditorStore((s) => s.sceneViewMode);
   const setSceneViewMode = useEditorStore((s) => s.setSceneViewMode);
-  const [projectionMode, setProjectionMode] = useState<'perspective' | 'orthographic'>('perspective');
 
   const updateStore = () => {
     const cam = cameraRef.current;
@@ -35,13 +45,11 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
   };
 
   const frameAll = () => {
-    const cam = cameraRef.current;
-    if (!cam) return;
-    cam.setView('iso');
+    // Reframe to scene bounds AND swing to isometric in one transition.
+    onFrameAll();
     updateStore();
   };
 
-  // Listen for custom events from keyboard shortcuts
   useEffect(() => {
     const handleViewPreset = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -50,12 +58,17 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
     const handleToggleProjection = () => {
       toggleProjection();
     };
+    const handleFrameAll = () => {
+      frameAll();
+    };
 
     window.addEventListener('viewport-view-preset', handleViewPreset);
     window.addEventListener('viewport-toggle-projection', handleToggleProjection);
+    window.addEventListener('viewport-frame-all', handleFrameAll);
     return () => {
       window.removeEventListener('viewport-view-preset', handleViewPreset);
       window.removeEventListener('viewport-toggle-projection', handleToggleProjection);
+      window.removeEventListener('viewport-frame-all', handleFrameAll);
     };
   }, []);
 
@@ -65,7 +78,7 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
       <button className="cam-btn" onClick={() => setView('right')} title="Right (Numpad 3)">R</button>
       <button className="cam-btn" onClick={() => setView('top')} title="Top (Numpad 7)">T</button>
       <div className="cam-separator" />
-      <button className="cam-btn" onClick={() => setView('iso')} title="Isometric">ISO</button>
+      <button className="cam-btn" onClick={frameAll} title="Isometric - frames all content">ISO</button>
       <button className="cam-btn" onClick={() => setView('back')} title="Back">Bk</button>
       <button className="cam-btn" onClick={() => setView('left')} title="Left">L</button>
       <button className="cam-btn" onClick={() => setView('bottom')} title="Bottom">Bt</button>
@@ -77,37 +90,19 @@ export function ViewportCameraControls({ cameraRef }: ViewportCameraControlsProp
       >
         {projectionMode === 'orthographic' ? 'ORTHO' : 'PERSP'}
       </button>
-      <button className="cam-btn" onClick={frameAll} title="Frame All">Home</button>
+      <button className="cam-btn" onClick={frameAll} title="Frame All (Home)">Home</button>
       <div className="cam-separator" />
       <div className="viewport-viewmode-controls">
-        <button
-          className={`cam-btn ${sceneViewMode === 'wireframe' ? 'active' : ''}`}
-          onClick={() => setSceneViewMode('wireframe')}
-          title="Wireframe"
-        >
-          Wire
-        </button>
-        <button
-          className={`cam-btn ${sceneViewMode === 'solid' ? 'active' : ''}`}
-          onClick={() => setSceneViewMode('solid')}
-          title="Solid (Unlit)"
-        >
-          Solid
-        </button>
-        <button
-          className={`cam-btn ${sceneViewMode === 'material' ? 'active' : ''}`}
-          onClick={() => setSceneViewMode('material')}
-          title="Material Preview"
-        >
-          MatCap
-        </button>
-        <button
-          className={`cam-btn ${sceneViewMode === 'rendered' ? 'active' : ''}`}
-          onClick={() => setSceneViewMode('rendered')}
-          title="Rendered"
-        >
-          Rendered
-        </button>
+        {VIEW_MODES.map((vm) => (
+          <button
+            key={vm.id}
+            className={`cam-btn ${sceneViewMode === vm.id ? 'active' : ''}`}
+            onClick={() => setSceneViewMode(vm.id)}
+            title={vm.title}
+          >
+            {vm.label}
+          </button>
+        ))}
       </div>
     </div>
   );

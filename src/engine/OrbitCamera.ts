@@ -36,6 +36,65 @@ export class OrbitCamera {
   public near: number = 0.1;
   public far: number = 2000;
 
+  // ---- Free-fly state (RMB flythrough) ----
+  public flying = false;
+  public flySpeed = 6; // world units / second (wheel adjusts)
+  private eye = new Vec3(0, 0, 10);
+  private yaw = 0;
+  private pitch = 0;
+
+  private flyForward(): Vec3 {
+    const cp = Math.cos(this.pitch);
+    return new Vec3(Math.sin(this.yaw) * cp, Math.sin(this.pitch), Math.cos(this.yaw) * cp);
+  }
+
+  beginFly(): void {
+    if (this.flying) return;
+    this.flying = true;
+    this.transition.active = false;
+    const pos = this.orbitPosition();
+    this.eye = pos.clone();
+    const dir = Vec3.normalize(Vec3.sub(this.target, pos));
+    this.pitch = Math.asin(Math.max(-1, Math.min(1, dir.y)));
+    this.yaw = Math.atan2(dir.x, dir.z);
+  }
+
+  endFly(): void {
+    if (!this.flying) return;
+    this.flying = false;
+    const fwd = this.flyForward();
+    // Keep looking the same way: place orbit target ahead of the eye.
+    this.target = Vec3.add(this.eye, Vec3.scale(fwd, Math.max(this.distance, 4)));
+    // Re-derive orbit angles from forward direction so view doesn't jump.
+    this.elevation = Math.max(this.minElevation, Math.min(this.maxElevation, this.pitch));
+    this.azimuth = this.yaw - Math.PI;
+  }
+
+  flyLook(dx: number, dy: number): void {
+    this.yaw -= dx * 0.0032;
+    this.pitch -= dy * 0.0032;
+    this.pitch = Math.max(-1.55, Math.min(1.55, this.pitch));
+  }
+
+  /** Move per pressed keys over dt seconds. */
+  flyTick(dt: number, keys: Set<string>): void {
+    if (!this.flying) return;
+    const f = this.flyForward();
+    const right = Vec3.normalize(Vec3.cross(f, new Vec3(0, 1, 0)));
+    let move = new Vec3();
+    if (keys.has('KeyW') || keys.has('ArrowUp')) move = Vec3.add(move, f);
+    if (keys.has('KeyS') || keys.has('ArrowDown')) move = Vec3.sub(move, f);
+    if (keys.has('KeyD') || keys.has('ArrowRight')) move = Vec3.add(move, right);
+    if (keys.has('KeyA') || keys.has('ArrowLeft')) move = Vec3.sub(move, right);
+    if (keys.has('KeyE')) move = Vec3.add(move, new Vec3(0, 1, 0));
+    if (keys.has('KeyQ')) move = Vec3.add(move, new Vec3(0, -1, 0));
+
+    if (move.lengthSq() > 1e-9) {
+      const speed = this.flySpeed * (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 3 : 1);
+      this.eye = Vec3.add(this.eye, Vec3.scale(Vec3.normalize(move), speed * dt));
+    }
+  }
+
   private transition: CameraTransition = {
     fromTarget: new Vec3(), fromDistance: 0, fromAzimuth: 0, fromElevation: 0,
     toTarget: new Vec3(), toDistance: 0, toAzimuth: 0, toElevation: 0,
@@ -43,6 +102,11 @@ export class OrbitCamera {
   };
 
   get position(): Vec3 {
+    if (this.flying) return this.eye.clone();
+    return this.orbitPosition();
+  }
+
+  private orbitPosition(): Vec3 {
     const t = this.getCurrentTransitionT();
     const azim = t < 1 ? lerp(this.transition.fromAzimuth, this.transition.toAzimuth, t) : this.azimuth;
     const elev = t < 1 ? lerp(this.transition.fromElevation, this.transition.toElevation, t) : this.elevation;
@@ -57,6 +121,7 @@ export class OrbitCamera {
   }
 
   rotate(deltaX: number, deltaY: number): void {
+    if (this.flying) return;
     this.cancelTransition();
     this.azimuth -= deltaX * this.rotateSpeed;
     this.elevation += deltaY * this.rotateSpeed;
@@ -66,6 +131,7 @@ export class OrbitCamera {
   }
 
   pan(deltaX: number, deltaY: number, _vw: number, vh: number): void {
+    if (this.flying) return;
     this.cancelTransition();
     const right = this.right;
     const up = this.up;
@@ -83,6 +149,12 @@ export class OrbitCamera {
 
   zoom(delta: number): void {
     this.cancelTransition();
+    if (this.flying) {
+      // Wheel adjusts fly speed while in flythrough
+      this.flySpeed *= delta < 0 ? 1.15 : 0.87;
+      this.flySpeed = Math.max(0.5, Math.min(200, this.flySpeed));
+      return;
+    }
     if (this.projectionMode === 'orthographic') {
       this.orthoZoom += delta * this.zoomSpeed * this.orthoZoom;
       this.orthoZoom = Math.max(0.5, Math.min(500, this.orthoZoom));
@@ -176,10 +248,25 @@ export class OrbitCamera {
       right: { azim: 0, elev: 0 },
       top: { azim: 0, elev: Math.PI / 2 - 0.001 },
       bottom: { azim: 0, elev: -Math.PI / 2 + 0.001 },
-      iso: { azim: (45 * Math.PI) / 180, elev: (35.26 * Math.PI) / 180 },
+      iso: { azim: (45 * Math.PI) / 180, elev: (35.264 * Math.PI) / 180 },
     };
     const p = presets[preset];
     this.startTransition(this.target.clone(), this.distance, p.azim, p.elev, 0.3);
+  }
+
+  /**
+   * Frame the given bounds and swing to the isometric angle in one smooth
+   * transition. Used by Home/ISO so the view actually centers scene content
+   * instead of rotating around wherever the target currently sits.
+   */
+  frameAllIso(center: Vec3, radius: number): void {
+    this.startTransition(
+      center.clone(),
+      Math.max(radius * 2.4, 2),
+      (45 * Math.PI) / 180,
+      (35.264 * Math.PI) / 180,
+      0.35,
+    );
   }
 
   toggleProjection(): void {
@@ -196,6 +283,10 @@ export class OrbitCamera {
   }
 
   getViewMatrix(): Mat4 {
+    if (this.flying) {
+      const fwd = this.flyForward();
+      return Mat4.lookAt(this.eye, Vec3.add(this.eye, fwd), new Vec3(0, 1, 0));
+    }
     return Mat4.lookAt(this.position, this.target, new Vec3(0, 1, 0));
   }
 

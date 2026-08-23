@@ -75,6 +75,9 @@ export function useKeyboardShortcuts() {
         case 'f':
           frameSelected();
           break;
+        case 'home':
+          window.dispatchEvent(new CustomEvent('viewport-frame-all'));
+          break;
         case 'delete':
         case 'backspace':
           if (selectedNodeId !== null) {

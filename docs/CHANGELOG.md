@@ -1,5 +1,44 @@
 # Version History
 
+## v26.1-20.1 (2026-08-23) - LTS Release (Critical Math Fix)
+
+### Root Cause Found
+A fundamental matrix-math bug silently broke all CPU-side transform math since v1:
+- `Mat4.multiply` matched neither A·B nor B·A (verified against textbook reference)
+- `Mat4.lookAt` stored the rotation basis transposed, so V·eye != origin
+
+GPU rendering masked both (GLSL multiplied P·V·M itself), but every JS-side
+consumer was wrong: ray-picking/unprojection (object selection!), gizmo screen
+projection, zoom-to-cursor, and model composition (fromTRS dropped rotation and
+scale contributions). This is why entities "could not be selected" and the
+camera felt broken.
+
+### Fixed
+- `Mat4.multiply`: correct column-major triple loop (verified 0-error vs reference)
+- `Mat4.lookAt`: basis vectors stored transposed; V·eye == origin verified
+- Verified via new unit suite: multiply == textbook A·B (0 err), invert ==
+  Gauss-Jordan reference (exact), roundtrip ~1e-8
+
+### Added
+- Flythrough camera: hold RMB + WASD move / Q-E down-up / Shift x3 speed /
+  wheel adjusts fly speed; orbit params resync on exit
+- Home / ISO now frame scene bounding box (frameAllIso) instead of rotating
+  in place around a stale target
+- `__noise3d_cam` debug hook; Home key shortcut; frameAll event
+- View-mode buttons restored (lost in v20.1 controls rewrite)
+
+### Fixed (selection)
+- Gizmo plane handles no longer intercept clicks on object bodies: left-click
+  raycasts meshes first; plane quads only intercept over empty space
+- Plane handle hit/visual size reduced 0.42 -> 0.30 of gizmo scale
+- updateNodeTransform bumps undoRevision so Inspector reflects gizmo drags
+
+### Tested
+- New: mat4-vs-reference + mat4-invert unit suites (6 tests)
+- New: v23 camera/selection E2E (6 tests: cross-object select, deselect,
+  flythrough move>1u, Home/ISO reframe, cam hook)
+- Full suite: 307 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-20.0 (2026-08-20) - LTS Release
 
 ### Added

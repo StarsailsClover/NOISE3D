@@ -6,6 +6,7 @@ import type { IRenderer } from '@renderer/RendererFactory';
 import { Scene } from '@scene/Scene';
 import { OrbitCamera } from '@engine/OrbitCamera';
 import { GizmoInteraction } from '@engine/GizmoInteraction';
+import { computeSceneBounds, primitiveMin, primitiveMax } from '@engine/primitiveBounds';
 import { Ray } from '@engine/Ray';
 import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
@@ -22,6 +23,8 @@ export function ViewportPanel() {
   const gizmoRef = useRef<GizmoInteraction>(new GizmoInteraction());
   const gizmoDraggingRef = useRef(false);
   const [cursor, setCursor] = useState<'default' | 'grab' | 'grabbing'>('default');
+  const flyActiveRef = useRef(false);
+  const keysRef = useRef<Set<string>>(new Set());
 
   const scene = useEditorStore((s) => s.scene);
   const showGrid = useEditorStore((s) => s.showGrid);
@@ -86,13 +89,41 @@ export function ViewportPanel() {
     const resizeObserver = new ResizeObserver(resizeCanvas);
     resizeObserver.observe(canvas);
 
+    // Keyboard tracking for flythrough
+    const keys = keysRef.current;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return;
+      keys.add(e.code);
+    };
+    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    let lastT = performance.now();
     const renderLoop = () => {
       if (!rendererRef.current) return;
+      const now = performance.now();
+      const dt = Math.min((now - lastT) / 1000, 0.1);
+      lastT = now;
+
+      // Flythrough movement (per-frame)
+      if (flyActiveRef.current) cam.flyTick(dt, keys);
+
       const r = rendererRef.current;
       r.showGrid = showGrid;
       r.cameraPos = cam.position;
       r.cameraTarget = cam.target;
       r.selectedNodeId = selectedNodeId;
+
+      // Camera debug hook
+      (window as any).__noise3d_cam = {
+        pos: { x: cam.position.x, y: cam.position.y, z: cam.position.z },
+        target: { x: cam.target.x, y: cam.target.y, z: cam.target.z },
+        dist: cam.distance,
+        flying: cam.flying,
+        flySpeed: cam.flySpeed,
+      };
 
       const aspect = canvas.width / Math.max(1, canvas.height);
       r.projectionMatrix = cam.getProjectionMatrix(aspect);
@@ -127,6 +158,8 @@ export function ViewportPanel() {
     return () => {
       cancelAnimationFrame(animationRef.current);
       resizeObserver.disconnect();
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
       renderer.dispose();
       rendererRef.current = null;
       setRenderCanvas(null);
@@ -191,6 +224,16 @@ export function ViewportPanel() {
         );
         return { handle: h, ws: gizmoRef.current.worldScale, mode: st.gizmoMode };
       },
+      raycast: (xCss: number, yCss: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { error: 'no canvas' };
+        const r = canvas.getBoundingClientRect();
+        const id = raycastPick(
+          useEditorStore.getState().scene,
+          xCss, yCss, r.width, r.height, cameraRef.current,
+        );
+        return { objId: id };
+      },
       project: (x: number, y: number, z: number) => {
         const canvas = canvasRef.current;
         if (!canvas) return null;
@@ -213,33 +256,54 @@ export function ViewportPanel() {
       lastMouseRef.current = { x, y };
 
       if (e.button === 0) {
-        // Gizmo handles take priority over object picking
         const st0 = useEditorStore.getState();
-        const node = st0.selectedNodeId !== null ? scene.getNode(st0.selectedNodeId) : undefined;
-        if (node && node.type !== 'empty') {
-          const cam = cameraRef.current;
-          const handle = gizmoRef.current.pickHandle(
-            x, y, node.position, cam, rect.width, rect.height, cam.fov, st0.gizmoMode,
-          );
-          if (handle) {
-            st0.takeSnapshot(); // one undo entry per gesture
-            gizmoRef.current.startDrag(
-              handle, x, y,
-              node.position, node.rotation, node.scale,
-              cam, rect.width, rect.height,
-            );
-            gizmoDraggingRef.current = true;
-            setCursor('grabbing');
-            e.preventDefault();
-            return;
-          }
+
+        // Top-most object under cursor decides selection vs gizmo priority
+        const objId = raycastPick(
+          scene, x, y, rect.width, rect.height,
+          cameraRef.current,
+        );
+
+        // Gizmo intercept rules (Blender-like):
+        //   axis/ring always win; plane quads only over empty space so
+        //   clicking an object's body always selects it.
+        let handle: { kind: string; axis: 'x' | 'y' | 'z' } | null = null;
+        const selNode = st0.selectedNodeId !== null ? scene.getNode(st0.selectedNodeId) : undefined;
+        if (selNode && selNode.type !== 'empty') {
+          handle = gizmoRef.current.pickHandle(
+            x, y, selNode.position, cameraRef.current,
+            rect.width, rect.height, cameraRef.current.fov, st0.gizmoMode,
+          ) as { kind: string; axis: 'x' | 'y' | 'z' } | null;
+          if (handle && handle.kind === 'plane' && objId !== null) handle = null;
         }
+
+        if (handle && selNode) {
+          st0.takeSnapshot(); // one undo entry per gesture
+          gizmoRef.current.startDrag(
+            handle as never, x, y,
+            selNode.position, selNode.rotation, selNode.scale,
+            cameraRef.current, rect.width, rect.height,
+          );
+          gizmoDraggingRef.current = true;
+          setCursor('grabbing');
+          e.preventDefault();
+          return;
+        }
+
         dragModeRef.current = 'none';
         isDraggingRef.current = true;
-        pickObject(x, y, rect.width, rect.height);
-      } else if (e.button === 1 || e.button === 2) {
+        selectNode(objId);
+      } else if (e.button === 2) {
+        // Right button: enter free-fly look mode
+        cameraRef.current.beginFly();
+        flyActiveRef.current = true;
+        dragModeRef.current = 'none';
         isDraggingRef.current = true;
-        dragModeRef.current = e.button === 1 ? 'pan' : 'rotate';
+        setCursor('grabbing');
+        e.preventDefault();
+      } else if (e.button === 1) {
+        isDraggingRef.current = true;
+        dragModeRef.current = 'pan';
         e.preventDefault();
       }
     },
@@ -297,8 +361,8 @@ export function ViewportPanel() {
       const dy = y - lastMouseRef.current.y;
 
       const cam = cameraRef.current;
-      if (isDraggingRef.current && dragModeRef.current === 'rotate') {
-        cam.rotate(dx, dy);
+      if (isDraggingRef.current && flyActiveRef.current) {
+        cam.flyLook(dx, dy);
       } else if (isDraggingRef.current && dragModeRef.current === 'pan') {
         cam.pan(dx, dy, rect.width, rect.height);
       } else {
@@ -327,6 +391,11 @@ export function ViewportPanel() {
       gizmoDraggingRef.current = false;
       setCursor('default');
     }
+    if (flyActiveRef.current) {
+      cameraRef.current.endFly();
+      flyActiveRef.current = false;
+      setCursor('default');
+    }
     isDraggingRef.current = false;
     dragModeRef.current = 'none';
   }, []);
@@ -340,46 +409,11 @@ export function ViewportPanel() {
     e.preventDefault();
   }, []);
 
-  const pickObject = useCallback(
-    (screenX: number, screenY: number, width: number, height: number) => {
-      const r = rendererRef.current;
-      if (!r) return;
-      const cam = cameraRef.current;
-      const dpr = window.devicePixelRatio || 1;
-      const sx = screenX * dpr;
-      const sy = screenY * dpr;
-      const w = width * dpr;
-      const h = height * dpr;
-
-      const aspect = w / h;
-      const projMatrix = cam.getProjectionMatrix(aspect);
-
-      const ray = Ray.fromScreen(
-        sx, sy, w, h,
-        cam.position, cam.target, cam.fov, cam.near, cam.far,
-        projMatrix,
-      );
-
-      const nodes = scene.getAllNodes();
-      let closestId: number | null = null;
-      let closestT = Infinity;
-
-      for (const node of nodes) {
-        if (!node.visible || node.type === 'empty') continue;
-        const min = getPrimitiveMin(node.type);
-        const max = getPrimitiveMax(node.type);
-        const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
-        const t = ray.intersectAABB(min, max, model);
-        if (t !== null && t < closestT) {
-          closestT = t;
-          closestId = node.id;
-        }
-      }
-
-      selectNode(closestId);
-    },
-    [scene, selectNode],
-  );
+  const frameAllNodes = useCallback(() => {
+    const b = computeSceneBounds(scene.getAllNodes());
+    if (b) cameraRef.current.frameAllIso(b.center, b.radius);
+    else cameraRef.current.frameAllIso(new Vec3(0, 0, 0), 2);
+  }, [scene]);
 
   return (
     <div className="viewport-container">
@@ -396,31 +430,48 @@ export function ViewportPanel() {
       />
       <ViewportToolbar />
       <ViewportGizmoControls />
-      <ViewportCameraControls cameraRef={cameraRef} />
+      <ViewportCameraControls cameraRef={cameraRef} onFrameAll={frameAllNodes} />
     </div>
   );
 }
 
-function getPrimitiveMin(type: string): Vec3 {
-  switch (type) {
-    case 'plane':
-      return new Vec3(-1, 0, -1);
-    case 'sphere':
-      return new Vec3(-1, -1, -1);
-    default:
-      return new Vec3(-1, -1, -1);
-  }
-}
+/** Top-most visible mesh node under the cursor, or null. */
+function raycastPick(
+  scene: Scene,
+  screenX: number,
+  screenY: number,
+  widthCss: number,
+  heightCss: number,
+  cam: OrbitCamera,
+): number | null {
+  const dpr = window.devicePixelRatio || 1;
+  const sx = screenX * dpr;
+  const sy = screenY * dpr;
+  const w = widthCss * dpr;
+  const h = heightCss * dpr;
 
-function getPrimitiveMax(type: string): Vec3 {
-  switch (type) {
-    case 'plane':
-      return new Vec3(1, 0, 1);
-    case 'sphere':
-      return new Vec3(1, 1, 1);
-    default:
-      return new Vec3(1, 1, 1);
+  const projMatrix = cam.getProjectionMatrix(w / h);
+  const ray = Ray.fromScreen(
+    sx, sy, w, h,
+    cam.position, cam.target, cam.fov, cam.near, cam.far,
+    projMatrix,
+  );
+
+  let closestId: number | null = null;
+  let closestT = Infinity;
+
+  for (const node of scene.getAllNodes()) {
+    if (!node.visible || node.type === 'empty' || node.type === 'custom') continue;
+    const min = primitiveMin(node.type);
+    const max = primitiveMax(node.type);
+    const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
+    const t = ray.intersectAABB(min, max, model);
+    if (t !== null && t < closestT) {
+      closestT = t;
+      closestId = node.id;
+    }
   }
+  return closestId;
 }
 
 function ViewportToolbar() {
