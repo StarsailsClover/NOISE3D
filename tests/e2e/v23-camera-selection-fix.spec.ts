@@ -121,6 +121,26 @@ test.describe('NOISE3D v26.1-20.1 - Camera & Selection Fixes', () => {
     expect(Math.abs(cam.target.y - (-5))).toBeLessThan(1.5);
   });
 
+  test('Alt+LMB drag orbits camera around target', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(300);
+    const canvas = page.locator('.viewport-canvas');
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('no canvas');
+
+    await page.keyboard.down('Alt');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await page.keyboard.up('Alt');
+
+    const p1 = await page.evaluate(() => (window as any).__noise3d_cam.pos);
+    const d = Math.hypot(p1.x - 6.12, p1.y - 5, p1.z - 6.12);
+    // Camera eye moved to a different orbit position
+    expect(d).toBeGreaterThan(1);
+  });
+
   test('camera debug hook exposed', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(300);
@@ -129,4 +149,5 @@ test.describe('NOISE3D v26.1-20.1 - Camera & Selection Fixes', () => {
     expect(typeof cam.dist).toBe('number');
   });
 });
+
 

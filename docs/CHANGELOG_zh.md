@@ -20,6 +20,7 @@ GPU 渲染掩盖了二者 (GLSL 自行计算 P·V·M),但所有 JS 侧消费者�
 ### 新增
 - 穿越相机: 按住 RMB + WASD 移动 / Q-E 升降 / Shift 三倍速 / 滚轮调速;
   退出时轨道参数自动重同步
+- Alt+LMB 轨道旋转 (Unity 风格), RMB 改为穿越后保留轨道能力
 - Home / ISO 现在取景场景包围盒 (frameAllIso), 而非绕陈旧目标原地旋转
 - `__noise3d_cam` 调试钩子; Home 键快捷键; frameAll 事件
 - 视图模式按钮恢复 (v20.1 控件重写时遗失)

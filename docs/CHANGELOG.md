@@ -22,6 +22,7 @@ camera felt broken.
 ### Added
 - Flythrough camera: hold RMB + WASD move / Q-E down-up / Shift x3 speed /
   wheel adjusts fly speed; orbit params resync on exit
+- Alt+LMB orbit (Unity-style) restored after RMB repurposed for flythrough
 - Home / ISO now frame scene bounding box (frameAllIso) instead of rotating
   in place around a stale target
 - `__noise3d_cam` debug hook; Home key shortcut; frameAll event
@@ -438,3 +439,4 @@ camera felt broken.
 - Editor UI: Toolbar, Hierarchy, Viewport, Inspector, Console
 - Zustand-based state management
 - ESLint, Prettier, Vitest, Playwright configuration
+

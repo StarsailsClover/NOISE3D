@@ -19,7 +19,7 @@ export function ViewportPanel() {
   const animationRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
-  const dragModeRef = useRef<'rotate' | 'pan' | 'none'>('none');
+  const dragModeRef = useRef<'rotate' | 'pan' | 'orbit' | 'none'>('none');
   const gizmoRef = useRef<GizmoInteraction>(new GizmoInteraction());
   const gizmoDraggingRef = useRef(false);
   const [cursor, setCursor] = useState<'default' | 'grab' | 'grabbing'>('default');
@@ -255,6 +255,14 @@ export function ViewportPanel() {
 
       lastMouseRef.current = { x, y };
 
+      if (e.button === 0 && e.altKey) {
+        // Alt+LMB: orbit around target (Unity-style), takes priority
+        dragModeRef.current = 'orbit';
+        isDraggingRef.current = true;
+        e.preventDefault();
+        return;
+      }
+
       if (e.button === 0) {
         const st0 = useEditorStore.getState();
 
@@ -363,6 +371,8 @@ export function ViewportPanel() {
       const cam = cameraRef.current;
       if (isDraggingRef.current && flyActiveRef.current) {
         cam.flyLook(dx, dy);
+      } else if (isDraggingRef.current && dragModeRef.current === 'orbit') {
+        cam.rotate(dx, dy);
       } else if (isDraggingRef.current && dragModeRef.current === 'pan') {
         cam.pan(dx, dy, rect.width, rect.height);
       } else {
@@ -524,3 +534,4 @@ function ViewportGizmoControls() {
     </div>
   );
 }
+
