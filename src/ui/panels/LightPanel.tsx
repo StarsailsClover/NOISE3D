@@ -1,4 +1,6 @@
-import { useEditorStore } from '@core/EditorStore';
+﻿import { useEditorStore } from '@core/EditorStore';
+import { NumberField } from '../fields/NumberField';
+import { Vec3 } from '@math/Vec';
 
 export function LightPanel() {
   const lights = useEditorStore((s) => s.scene.lights);
@@ -90,36 +92,24 @@ export function LightPanel() {
               <div className="inspector-section">
                 <label className="inspector-label">Position</label>
                 <div className="inspector-vec3">
-                  <input
-                    className="inspector-number"
-                    type="number"
-                    step="0.5"
-                    value={light.position.x}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value) || 0;
-                      updateLight(light.id, { position: { ...light.position, x: v } as any });
-                    }}
-                  />
-                  <input
-                    className="inspector-number"
-                    type="number"
-                    step="0.5"
-                    value={light.position.y}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value) || 0;
-                      updateLight(light.id, { position: { ...light.position, y: v } as any });
-                    }}
-                  />
-                  <input
-                    className="inspector-number"
-                    type="number"
-                    step="0.5"
-                    value={light.position.z}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value) || 0;
-                      updateLight(light.id, { position: { ...light.position, z: v } as any });
-                    }}
-                  />
+                  {(['x', 'y', 'z'] as const).map((ax) => (
+                    <NumberField
+                      key={ax}
+                      className="inspector-number"
+                      value={light.position[ax]}
+                      step={0.5}
+                      title={ax.toUpperCase()}
+                      onCommit={(v) =>
+                        updateLight(light.id, {
+                          position: new Vec3(
+                            ax === 'x' ? v : light.position.x,
+                            ax === 'y' ? v : light.position.y,
+                            ax === 'z' ? v : light.position.z,
+                          ),
+                        })
+                      }
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -127,36 +117,24 @@ export function LightPanel() {
                 <div className="inspector-section">
                   <label className="inspector-label">Direction</label>
                   <div className="inspector-vec3">
-                    <input
-                      className="inspector-number"
-                      type="number"
-                      step="0.1"
-                      value={light.direction.x.toFixed(2)}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value) || 0;
-                        updateLight(light.id, { direction: { ...light.direction, x: v } as any });
-                      }}
-                    />
-                    <input
-                      className="inspector-number"
-                      type="number"
-                      step="0.1"
-                      value={light.direction.y.toFixed(2)}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value) || 0;
-                        updateLight(light.id, { direction: { ...light.direction, y: v } as any });
-                      }}
-                    />
-                    <input
-                      className="inspector-number"
-                      type="number"
-                      step="0.1"
-                      value={light.direction.z.toFixed(2)}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value) || 0;
-                        updateLight(light.id, { direction: { ...light.direction, z: v } as any });
-                      }}
-                    />
+                    {(['x', 'y', 'z'] as const).map((ax) => (
+                      <NumberField
+                        key={ax}
+                        className="inspector-number"
+                        value={light.direction[ax]}
+                        step={0.1}
+                        title={ax.toUpperCase()}
+                        onCommit={(v) =>
+                          updateLight(light.id, {
+                            direction: new Vec3(
+                              ax === 'x' ? v : light.direction.x,
+                              ax === 'y' ? v : light.direction.y,
+                              ax === 'z' ? v : light.direction.z,
+                            ),
+                          })
+                        }
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -261,3 +239,4 @@ export function LightPanel() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 /**
  * v26.1-20.1 - Camera & Selection Hotfix
@@ -13,15 +13,20 @@ async function project(page: import('@playwright/test').Page, x: number, y: numb
   }, [x, y, z]);
 }
 
+async function setNumber(page: import('@playwright/test').Page, idx: number, value: string) {
+  const field = page.locator('[data-panel-id="inspector"] .inspector-number').nth(idx);
+  await field.click();
+  await page.waitForSelector('.numfield-editing');
+  await page.keyboard.type(value);
+  await page.keyboard.press('Enter');
+}
 test.describe('NOISE3D v26.1-20.1 - Camera & Selection Fixes', () => {
   test('clicking second object selects it while first has active gizmo', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     await page.locator('.viewport-toolbar button:has-text("Sphere")').click();
     // Move sphere to x=3
-    const posX = page.locator('[data-panel-id="inspector"] .inspector-number').first();
-    await posX.fill('3');
-    await posX.press('Tab');
+    await setNumber(page, 0, '3');
     await page.waitForTimeout(100);
 
     // Gizmo now sits on sphere at (3,0,0). Click the CUBE body at origin.
@@ -92,11 +97,7 @@ test.describe('NOISE3D v26.1-20.1 - Camera & Selection Fixes', () => {
   test('Home key frames all content (target moves to bbox center)', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    const posY = page.locator('[data-panel-id="inspector"] .inspector-number').nth(1);
-    await posY.fill('6');
-    await posY.press('Tab');
-    // Blur so global shortcuts receive the Home key
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await setNumber(page, 1, '6');
     await page.waitForTimeout(80);
     await page.keyboard.press('Home');
     await page.waitForTimeout(700); // transition 0.35s
@@ -109,9 +110,7 @@ test.describe('NOISE3D v26.1-20.1 - Camera & Selection Fixes', () => {
   test('ISO button reframes content too', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    const posY = page.locator('[data-panel-id="inspector"] .inspector-number').nth(1);
-    await posY.fill('-5');
-    await posY.press('Tab');
+    await setNumber(page, 1, '-5');
 
     await page.locator('.cam-btn:has-text("PERSP")').waitFor();
     await page.locator('.cam-btn[title="Isometric - frames all content"]').click();
@@ -149,5 +148,7 @@ test.describe('NOISE3D v26.1-20.1 - Camera & Selection Fixes', () => {
     expect(typeof cam.dist).toBe('number');
   });
 });
+
+
 
 

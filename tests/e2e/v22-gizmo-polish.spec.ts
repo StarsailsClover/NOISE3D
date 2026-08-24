@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 /**
  * v26.1-20.0 - Gizmo Interaction Polish
@@ -52,7 +52,7 @@ test.describe('NOISE3D v26.1-20.0 - Gizmo Polish', () => {
     const box = await canvas.boundingBox();
     if (!box) throw new Error('no canvas');
 
-    const startX = await page.locator('[data-panel-id="inspector"] .inspector-number').first().inputValue();
+    const startX = await page.locator('[data-panel-id="inspector"] .inspector-number .numfield-display').first().inputValue();
 
     await page.mouse.move(box.x + pt.x, box.y + pt.y);
     await page.mouse.down();
@@ -65,12 +65,12 @@ test.describe('NOISE3D v26.1-20.0 - Gizmo Polish', () => {
     expect(cursorDuring).toBe('grabbing');
     await page.mouse.up();
 
-    const endX = await page.locator('[data-panel-id="inspector"] .inspector-number').first().inputValue();
+    const endX = await page.locator('[data-panel-id="inspector"] .inspector-number .numfield-display').first().inputValue();
     expect(parseFloat(endX)).not.toBeCloseTo(parseFloat(startX), 2);
 
     // Exactly one undo restores original position
     await page.keyboard.press('Control+z');
-    const undoneX = await page.locator('[data-panel-id="inspector"] .inspector-number').first().inputValue();
+    const undoneX = await page.locator('[data-panel-id="inspector"] .inspector-number .numfield-display').first().inputValue();
     expect(parseFloat(undoneX)).toBeCloseTo(parseFloat(startX), 1);
   });
 
@@ -89,7 +89,7 @@ test.describe('NOISE3D v26.1-20.0 - Gizmo Polish', () => {
     await page.mouse.up();
     await page.keyboard.up('Control');
 
-    const xStr = await page.locator('[data-panel-id="inspector"] .inspector-number').first().inputValue();
+    const xStr = await page.locator('[data-panel-id="inspector"] .inspector-number .numfield-display').first().inputValue();
     const x = parseFloat(xStr);
     const remainder = Math.abs(x / 0.5 - Math.round(x / 0.5));
     expect(remainder).toBeLessThan(0.001);
@@ -140,7 +140,7 @@ test.describe('NOISE3D v26.1-20.0 - Gizmo Polish', () => {
     expect(started).toBe(true);
 
     const rotX = parseFloat(
-      await page.locator('[data-panel-id="inspector"] .inspector-number').nth(3).inputValue(),
+      await page.locator('[data-panel-id="inspector"] .inspector-number .numfield-display').nth(3).inputValue(),
     );
     const degMod = Math.abs((rotX % 15 + 15) % 15);
     expect(degMod < 0.01 || Math.abs(degMod - 15) < 0.01).toBe(true);
@@ -161,8 +161,9 @@ test.describe('NOISE3D v26.1-20.0 - Gizmo Polish', () => {
     await page.mouse.up();
 
     const sx = parseFloat(
-      await page.locator('[data-panel-id="inspector"] .inspector-number').nth(6).inputValue(),
+      await page.locator('[data-panel-id="inspector"] .inspector-number .numfield-display').nth(6).inputValue(),
     );
     expect(sx).toBeGreaterThan(1.05);
   });
 });
+

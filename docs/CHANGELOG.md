@@ -1,5 +1,31 @@
 # Version History
 
+## v26.1-21.0 (2026-08-23) - LTS Release
+
+### Added
+- Shared `NumberField` component implementing the Blender binding table
+  (INTERACTION-REFERENCE §2) across all numeric inputs:
+  - Hover `<` `>` steppers; click to step; Ctrl+Wheel steps without focus
+  - LMB-drag horizontal scrub (cursor ew-resize); Ctrl quantizes to field
+    step; Shift = precision (0.1x rate)
+  - Plain click = text entry; Enter or click-outside commits; Esc reverts;
+    invalid input flashes red and reverts silently
+  - ArrowUp/Down nudge by step (Shift x10, Alt x0.1); Minus negates
+- Integrated into Inspector (Position/Rotation/Scale via `Vec3Row`,
+  texture tiling/offset) and LightPanel (light position/direction)
+- Scrub gestures coalesce into ONE undo entry (`onDragStart` fires
+  `takeSnapshot` at first movement — Blender modal-operator rule)
+
+### Fixed
+- Legacy specs migrated: value reads target `.numfield-display`;
+  writes use click-type-Enter helper with `.numfield-editing` wait
+  (removes rAF focus race)
+
+### Tested
+- 12 new NumberField E2E tests (nudge/scrub/quantize/edit/revert/flash/
+  wheel/arrows/negate/undo-coalescing)
+- Full suite: 319 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-20.1 (2026-08-23) - LTS Release (Critical Math Fix)
 
 ### Root Cause Found

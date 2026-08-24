@@ -1,7 +1,8 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { Vec3, Color } from '@math/Vec';
 import { MATERIAL_PRESETS } from '@renderer/Material';
+import { NumberField } from '../fields/NumberField';
 import { BUILTIN_COMPONENT_TYPES, getComponentDisplayName, getComponentPropertyLabels, type ComponentData } from '@scene/Component';
 
 export function InspectorPanel() {
@@ -69,137 +70,27 @@ export function InspectorPanel() {
 
         <div className="inspector-section">
           <label className="inspector-label">Position</label>
-          <div className="inspector-vec3">
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.position.x}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  new Vec3(parseFloat(e.target.value) || 0, node.position.y, node.position.z),
-                )
-              }
-            />
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.position.y}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  new Vec3(node.position.x, parseFloat(e.target.value) || 0, node.position.z),
-                )
-              }
-            />
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.position.z}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  new Vec3(node.position.x, node.position.y, parseFloat(e.target.value) || 0),
-                )
-              }
-            />
-          </div>
+          <Vec3Row
+            value={node.position}
+            onCommit={(p) => updateNodeTransform(node.id, p)}
+          />
         </div>
 
         <div className="inspector-section">
           <label className="inspector-label">Rotation</label>
-          <div className="inspector-vec3">
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.rotation.x.toFixed(2)}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  undefined,
-                  new Vec3(parseFloat(e.target.value) || 0, node.rotation.y, node.rotation.z),
-                )
-              }
-            />
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.rotation.y.toFixed(2)}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  undefined,
-                  new Vec3(node.rotation.x, parseFloat(e.target.value) || 0, node.rotation.z),
-                )
-              }
-            />
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.rotation.z.toFixed(2)}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  undefined,
-                  new Vec3(node.rotation.x, node.rotation.y, parseFloat(e.target.value) || 0),
-                )
-              }
-            />
-          </div>
+          <Vec3Row
+            value={node.rotation}
+            onCommit={(r) => updateNodeTransform(node.id, undefined, r)}
+          />
         </div>
 
         <div className="inspector-section">
           <label className="inspector-label">Scale</label>
-          <div className="inspector-vec3">
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.scale.x.toFixed(2)}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  undefined,
-                  undefined,
-                  new Vec3(parseFloat(e.target.value) || 0.01, node.scale.y, node.scale.z),
-                )
-              }
-            />
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.scale.y.toFixed(2)}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  undefined,
-                  undefined,
-                  new Vec3(node.scale.x, parseFloat(e.target.value) || 0.01, node.scale.z),
-                )
-              }
-            />
-            <input
-              className="inspector-number"
-              type="number"
-              step="0.1"
-              value={node.scale.z.toFixed(2)}
-              onChange={(e) =>
-                updateNodeTransform(
-                  node.id,
-                  undefined,
-                  undefined,
-                  new Vec3(node.scale.x, node.scale.y, parseFloat(e.target.value) || 0.01),
-                )
-              }
-            />
-          </div>
+          <Vec3Row
+            value={node.scale}
+            min={0.01}
+            onCommit={(s) => updateNodeTransform(node.id, undefined, undefined, s)}
+          />
         </div>
 
         {material && (
@@ -316,52 +207,42 @@ export function InspectorPanel() {
 
               <label className="inspector-sublabel">Tiling</label>
               <div className="inspector-vec3">
-                <input
+                <NumberField
                   className="inspector-number"
-                  type="number"
-                  step="0.1"
-                  value={material.textureTiling[0].toFixed(2)}
-                  onChange={(e) =>
-                    setMaterial(node.id, {
-                      textureTiling: [parseFloat(e.target.value) || 1, material.textureTiling[1]],
-                    })
+                  value={material.textureTiling[0]}
+                  step={0.1}
+                  min={0.01}
+                  onCommit={(v) =>
+                    setMaterial(node.id, { textureTiling: [v, material.textureTiling[1]] })
                   }
                 />
-                <input
+                <NumberField
                   className="inspector-number"
-                  type="number"
-                  step="0.1"
-                  value={material.textureTiling[1].toFixed(2)}
-                  onChange={(e) =>
-                    setMaterial(node.id, {
-                      textureTiling: [material.textureTiling[0], parseFloat(e.target.value) || 1],
-                    })
+                  value={material.textureTiling[1]}
+                  step={0.1}
+                  min={0.01}
+                  onCommit={(v) =>
+                    setMaterial(node.id, { textureTiling: [material.textureTiling[0], v] })
                   }
                 />
               </div>
 
               <label className="inspector-sublabel">Offset</label>
               <div className="inspector-vec3">
-                <input
+                <NumberField
                   className="inspector-number"
-                  type="number"
-                  step="0.1"
-                  value={material.textureOffset[0].toFixed(2)}
-                  onChange={(e) =>
-                    setMaterial(node.id, {
-                      textureOffset: [parseFloat(e.target.value) || 0, material.textureOffset[1]],
-                    })
+                  value={material.textureOffset[0]}
+                  step={0.05}
+                  onCommit={(v) =>
+                    setMaterial(node.id, { textureOffset: [v, material.textureOffset[1]] })
                   }
                 />
-                <input
+                <NumberField
                   className="inspector-number"
-                  type="number"
-                  step="0.1"
-                  value={material.textureOffset[1].toFixed(2)}
-                  onChange={(e) =>
-                    setMaterial(node.id, {
-                      textureOffset: [material.textureOffset[0], parseFloat(e.target.value) || 0],
-                    })
+                  value={material.textureOffset[1]}
+                  step={0.05}
+                  onCommit={(v) =>
+                    setMaterial(node.id, { textureOffset: [material.textureOffset[0], v] })
                   }
                 />
               </div>
@@ -502,3 +383,37 @@ function ComponentEditor({ nodeId, component, onRemove, onUpdate }: {
   );
 }
 
+function Vec3Row({
+  value,
+  onCommit,
+  min,
+}: {
+  value: Vec3;
+  onCommit: (v: Vec3) => void;
+  min?: number;
+}) {
+  return (
+    <div className="inspector-vec3">
+      {(['x', 'y', 'z'] as const).map((ax) => (
+        <NumberField
+          key={ax}
+          className="inspector-number"
+          value={value[ax]}
+          step={0.1}
+          min={min}
+          title={ax.toUpperCase()}
+          onDragStart={() => useEditorStore.getState().takeSnapshot()}
+          onCommit={(nv) =>
+            onCommit(
+              new Vec3(
+                ax === 'x' ? nv : value.x,
+                ax === 'y' ? nv : value.y,
+                ax === 'z' ? nv : value.z,
+              ),
+            )
+          }
+        />
+      ))}
+    </div>
+  );
+}

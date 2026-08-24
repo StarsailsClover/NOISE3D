@@ -1,5 +1,30 @@
 # 版本历史
 
+## v26.1-21.0 (2026-08-23) - LTS 发布
+
+### 新增
+- 共享 `NumberField` 组件, 在所有数值输入中实现 Blender 绑定表
+  (交互参考 §2):
+  - 悬停 `<` `>` 步进箭头; 点击步进; Ctrl+滚轮免聚焦步进
+  - LMB 水平拖拽滑动 (光标 ew-resize); Ctrl 按字段步长量化;
+    Shift = 精度模式 (0.1 倍速率)
+  - 纯点击 = 文本输入; Enter 或点击外部提交; Esc 还原;
+    非法输入红色闪烁并静默还原
+  - 方向键上下按步进微调 (Shift x10, Alt x0.1); Minus 取反
+- 集成到 Inspector (Position/Rotation/Scale 经 `Vec3Row`,
+  纹理平铺/偏移) 与 LightPanel (光源位置/方向)
+- 滑动手势合并为单条撤销 (`onDragStart` 在首次移动时触发
+  `takeSnapshot` — Blender 模态算子规则)
+
+### 修复
+- 旧规格迁移: 读值改为 `.numfield-display`; 写值使用
+  点击-键入-Enter 助手并等待 `.numfield-editing` (消除 rAF 聚焦竞态)
+
+### 测试
+- 12 个新 NumberField E2E 测试 (微调/滑动/量化/编辑/还原/闪烁/
+  滚轮/箭头/取反/撤销合并)
+- 全量套件: 319 E2E 通过 / 0 失败 + 6 单元通过
+
 ## v26.1-20.1 (2026-08-23) - LTS 发布 (关键数学修复)
 
 ### 根因查明

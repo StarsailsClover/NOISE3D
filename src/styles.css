@@ -328,6 +328,87 @@
   font-family: var(--font-mono);
 }
 
+/* Blender-style numeric field */
+.numfield {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  cursor: ew-resize;
+  user-select: none;
+}
+
+.numfield:hover {
+  border-color: #3d5a7d;
+}
+
+.numfield:focus,
+.numfield:focus-within {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.numfield-display {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 12px;
+  text-align: center;
+  cursor: inherit;
+}
+
+.numfield-arrow {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1;
+}
+
+.numfield-arrow.left { left: 0; }
+.numfield-arrow.right { right: 0; }
+
+.numfield:hover .numfield-arrow {
+  display: block;
+}
+
+.numfield-arrow:hover {
+  color: var(--accent-blue);
+}
+
+.numfield-editing {
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--accent-blue);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+@keyframes numflash {
+  0%, 100% { border-color: var(--border-color); }
+  50% { border-color: #e05555; }
+}
+
+.numfield-flash {
+  animation: numflash 0.45s;
+}
+
 .inspector-number:focus {
   outline: none;
   border-color: var(--accent-blue);
