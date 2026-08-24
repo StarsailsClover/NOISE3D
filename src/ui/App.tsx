@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import { Toolbar } from './Toolbar';
 import { ViewportPanel } from './panels/ViewportPanel';
 import { HierarchyPanel } from './panels/HierarchyPanel';
@@ -16,6 +16,8 @@ import { MeshEditPanel } from './panels/MeshEditPanel';
 import { CurveEditorPanel } from './panels/CurveEditorPanel';
 import { PluginManagerPanel } from './panels/PluginManagerPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { ContextMenu } from './ContextMenu';
+import { ShortcutHelp } from './ShortcutHelp';
 import {
   useWorkspaceStore,
   WORKSPACES,
@@ -96,6 +98,9 @@ export function App() {
           ))}
         </div>
       </div>
+      <ContextMenu />
+      <ShortcutHelp />
     </div>
   );
 }
+

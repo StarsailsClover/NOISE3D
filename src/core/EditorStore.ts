@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { Scene, PrimitiveType } from '@scene/Scene';
 import { Vec3 } from '@math/Vec';
 import type { Light, LightType } from '@scene/Light';
@@ -84,6 +84,9 @@ export interface EditorState {
   takeSnapshot: () => void;
   undoRevision: number;
   assets: Asset[];
+  removeAsset: (id: string) => void;
+  isolatedNodeId: number | null;
+  isolateNode: (id: number) => void;
   importOBJ: (file: File) => void;
   importTexture: (file: File) => void;
   addCustomMeshNode: (meshAssetId: string, name: string) => void;
@@ -158,6 +161,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   sceneName: 'Untitled',
   undoRevision: 0,
   assets: [],
+  isolatedNodeId: null,
   postExposure: 1.0,
   postBloomThreshold: 1.0,
   postBloomIntensity: 0.3,
@@ -333,6 +337,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ scene: state.scene });
   },
 
+
+  removeAsset: (id) => {
+    assetManager.removeAsset(id);
+    set({ assets: assetManager.getAssets() });
+    get().log('info', `Removed asset ${id}`);
+  },
+
+  isolateNode: (id) => {
+    const state = get();
+    if (state.isolatedNodeId === id) {
+      // restore all
+      for (const n of state.scene.getAllNodes()) n.visible = true;
+      set({ isolatedNodeId: null, scene: state.scene });
+      get().log('info', 'Isolate cleared');
+    } else {
+      for (const n of state.scene.getAllNodes()) n.visible = n.id === id;
+      set({ isolatedNodeId: id, scene: state.scene, selectedNodeId: id });
+      get().log('info', `Isolated node ${id}`);
+    }
+  },
   raycast: (origin, direction, maxDist) => {
     return physicsWorld.raycast(origin, direction, maxDist);
   },
@@ -816,3 +840,5 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ scene: state.scene, particleEmitters: [...state.particleEmitters] });
   },
 }));
+
+

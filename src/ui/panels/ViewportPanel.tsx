@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+﻿import { useEffect, useRef, useCallback, useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { Renderer } from '@renderer/Renderer';
 import { WebGPURenderer, isWebGPUAvailable } from '@renderer/WebGPURenderer';
@@ -7,6 +7,7 @@ import { Scene } from '@scene/Scene';
 import { OrbitCamera } from '@engine/OrbitCamera';
 import { GizmoInteraction } from '@engine/GizmoInteraction';
 import { computeSceneBounds, primitiveMin, primitiveMax } from '@engine/primitiveBounds';
+import { useOverlayStore } from '@core/OverlayStore';
 import { Ray } from '@engine/Ray';
 import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
@@ -240,6 +241,11 @@ export function ViewportPanel() {
         const r = canvas.getBoundingClientRect();
         return gizmoRef.current.projectPoint(new Vec3(x, y, z), cameraRef.current, r.width, r.height);
       },
+      cancel: () => {
+        gizmoRef.current.cancelDrag();
+        gizmoDraggingRef.current = false;
+        setCursor('default');
+      },
     };
     (window as any).__noise3d_gizmo = api;
     return () => { delete (window as any).__noise3d_gizmo; };
@@ -415,9 +421,46 @@ export function ViewportPanel() {
     cam.zoom(e.deltaY);
   }, []);
 
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-  }, []);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const st = useEditorStore.getState();
+      const objId = raycastPick(scene, x, y, rect.width, rect.height, cameraRef.current);
+      const { openMenu } = useOverlayStore.getState();
+      const cx = e.clientX;
+      const cy = e.clientY;
+
+      if (objId !== null) {
+        st.selectNode(objId);
+        openMenu(cx, cy, [
+          { label: 'Duplicate', shortcut: 'Ctrl+D', action: () => useEditorStore.getState().duplicateNode(objId) },
+          { label: 'Delete', shortcut: 'Del', danger: true, action: () => useEditorStore.getState().removeNode(objId) },
+          { label: 'Focus', shortcut: 'F', action: () => useEditorStore.getState().frameSelected() },
+          {
+            label: st.isolatedNodeId === objId ? 'Un-isolate' : 'Isolate',
+            separatorBefore: true,
+            action: () => useEditorStore.getState().isolateNode(objId),
+          },
+        ]);
+      } else {
+        const types = ['cube', 'sphere', 'plane', 'cylinder', 'cone'] as const;
+        openMenu(
+          cx, cy,
+          types.map((t) => ({
+            label: 'Add ' + t.charAt(0).toUpperCase() + t.slice(1),
+            action: () => useEditorStore.getState().addPrimitive(t),
+          })),
+        );
+      }
+    },
+    [scene],
+  );
 
   const frameAllNodes = useCallback(() => {
     const b = computeSceneBounds(scene.getAllNodes());
@@ -534,4 +577,5 @@ function ViewportGizmoControls() {
     </div>
   );
 }
+
 

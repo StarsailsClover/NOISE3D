@@ -1,5 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
+import { useOverlayStore } from '@core/OverlayStore';
 import { Scene } from '@scene/Scene';
 import { SceneNode } from '@scene/SceneNode';
 
@@ -83,6 +84,40 @@ function HierarchyItem({
         className={`hierarchy-item ${isSelected ? 'selected' : ''} ${isDragOver ? 'drag-over' : ''} ${isDragging ? 'dragging' : ''}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(node.id)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (isRoot) return;
+          onSelect(node.id);
+          const st = useEditorStore.getState();
+          useOverlayStore.getState().openMenu(e.clientX, e.clientY, [
+            {
+              label: 'Rename',
+              action: () => {
+                st.selectNode(node.id);
+                setTimeout(() => {
+                  const input = document.querySelector<HTMLInputElement>(
+                    '[data-panel-id="inspector"] .inspector-input',
+                  );
+                  input?.focus();
+                  input?.select();
+                }, 30);
+              },
+            },
+            { label: 'Duplicate', shortcut: 'Ctrl+D', action: () => st.duplicateNode(node.id) },
+            {
+              label: 'Move to Root',
+              action: () => node.parentId !== 0 && st.moveNode(node.id, 0),
+            },
+            {
+              label: 'Delete',
+              shortcut: 'Del',
+              danger: true,
+              separatorBefore: true,
+              action: () => st.removeNode(node.id),
+            },
+          ]);
+        }}
         draggable={!isRoot}
         onDragStart={() => !isRoot && setDragId(node.id)}
         onDragEnd={() => {
@@ -155,3 +190,5 @@ function HierarchyItem({
     </div>
   );
 }
+
+

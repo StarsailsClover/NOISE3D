@@ -1,5 +1,27 @@
 # Version History
 
+## v26.1-22.0 (2026-08-23) - LTS Release
+
+### Added
+- Right-click context menus with keyboard navigation (arrows + Enter):
+  - Viewport empty: Add Cube/Sphere/Plane/Cylinder/Cone
+  - Viewport object: Duplicate (Ctrl+D) / Delete (Del, danger) / Focus (F) /
+    Isolate / Un-isolate
+  - Hierarchy item: Rename (focuses Inspector name field) / Duplicate /
+    Move to Root / Delete
+  - Asset item: Add to Scene / Remove Asset
+- Menu closes on click-away, Escape, or action execution; clamped to viewport
+- Unified Escape chain: close menu > close cheat sheet > cancel gizmo drag >
+  deselect
+- `?` opens grouped keyboard shortcut cheat sheet modal (Esc closes);
+  SHORTCUTS registry shared with future command palette
+- Isolate mode: hide all but chosen node, toggle to restore
+- removeAsset store action (Asset Manager integration)
+
+### Tested
+- 12 new E2E tests (menus, isolate, Escape chain, cheat sheet, keyboard nav)
+- Full suite: 331 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-21.0 (2026-08-23) - LTS Release
 
 ### Added

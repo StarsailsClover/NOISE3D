@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useEditorStore } from '@core/EditorStore';
+import { useOverlayStore } from '@core/OverlayStore';
 
 export function useKeyboardShortcuts() {
   const addPrimitive = useEditorStore((s) => s.addPrimitive);
@@ -16,6 +17,35 @@ export function useKeyboardShortcuts() {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      const ov = useOverlayStore.getState();
+
+      // '?' (Shift+/) opens the shortcut cheat sheet
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        ov.toggleShortcutHelp();
+        return;
+      }
+
+      // Unified Escape chain: close menu > close help > cancel gizmo > deselect
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (ov.menu?.open) {
+          ov.closeMenu();
+          return;
+        }
+        if (ov.shortcutHelpOpen) {
+          ov.setShortcutHelp(false);
+          return;
+        }
+        const g = (window as any).__noise3d_gizmo;
+        if (g?.state?.().dragging) {
+          g.cancel();
+          return;
+        }
+        useEditorStore.getState().selectNode(null);
+        return;
+      }
 
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'z' && !e.shiftKey) {
@@ -101,3 +131,4 @@ export function useKeyboardShortcuts() {
     return () => window.removeEventListener('keydown', handler);
   }, [addPrimitive, setGizmoMode, removeNode, selectedNodeId, toggleGrid, frameSelected, undo, redo, duplicateNode]);
 }
+
