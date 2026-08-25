@@ -4,6 +4,9 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'zustand', 'react/jsx-runtime'],
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

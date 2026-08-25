@@ -468,8 +468,91 @@ export function ViewportPanel() {
     else cameraRef.current.frameAllIso(new Vec3(0, 0, 0), 2);
   }, [scene]);
 
+  // ---- Drag & drop (assets from browser + OS files) ----
+  const [osDragHover, setOsDragHover] = useState(false);
+  const osDragDepth = useRef(0);
+
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleOsDragEnter = useCallback((e: React.DragEvent) => {
+    if (!Array.from(e.dataTransfer.types).includes('Files')) return;
+    e.preventDefault();
+    osDragDepth.current += 1;
+    setOsDragHover(true);
+  }, []);
+
+  const handleOsDragLeave = useCallback((e: React.DragEvent) => {
+    if (!Array.from(e.dataTransfer.types).includes('Files')) return;
+    osDragDepth.current = Math.max(0, osDragDepth.current - 1);
+    if (osDragDepth.current === 0) setOsDragHover(false);
+  }, []);
+
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      osDragDepth.current = 0;
+      setOsDragHover(false);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const st = useEditorStore.getState();
+
+      // 1) OS files (import pipelines)
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        for (const file of Array.from(e.dataTransfer.files)) {
+          const lower = file.name.toLowerCase();
+          if (lower.endsWith('.obj')) st.importOBJ(file);
+          else if (/\.(png|jpe?g)$/.test(lower)) st.importTexture(file);
+          else if (lower.endsWith('.json')) st.loadSceneFromFile(file);
+        }
+        return;
+      }
+
+      // 2) Asset payload from the asset browser
+      const assetJson = e.dataTransfer.getData('application/x-noise3d-asset');
+      if (!assetJson) return;
+      try {
+        const { assetId, name } = JSON.parse(assetJson);
+        // Spawn at raycast hit point (lifted), else origin
+        let pos: Vec3 | undefined;
+        const dpr = window.devicePixelRatio || 1;
+        const ray = Ray.fromScreen(
+          x * dpr, y * dpr, rect.width * dpr, rect.height * dpr,
+          cameraRef.current.position, cameraRef.current.target,
+          cameraRef.current.fov, cameraRef.current.near, cameraRef.current.far,
+          cameraRef.current.getProjectionMatrix(rect.width / rect.height),
+        );
+        let closestT = Infinity;
+        for (const node of scene.getAllNodes()) {
+          if (!node.visible || node.type === 'empty' || node.type === 'custom') continue;
+          const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
+          const t = ray.intersectAABB(primitiveMin(node.type), primitiveMax(node.type), model);
+          if (t !== null && t < closestT) {
+            closestT = t;
+            pos = Vec3.add(ray.origin, Vec3.scale(ray.direction, t));
+          }
+        }
+        if (pos) pos = new Vec3(pos.x, pos.y + 0.6, pos.z);
+        st.addCustomMeshNode(assetId, name, pos);
+      } catch { /* bad payload */ }
+    },
+    [scene],
+  );
+
   return (
-    <div className="viewport-container">
+    <div
+      className={`viewport-container ${osDragHover ? 'os-drag-hover' : ''}`}
+      onDragEnter={handleOsDragEnter}
+      onDragLeave={handleOsDragLeave}
+      onDragOver={handleCanvasDragOver}
+      onDrop={handleCanvasDrop}
+    >
+      {osDragHover && <div className="os-drop-overlay">Drop OBJ / image / scene JSON</div>}
       <canvas
         ref={canvasRef}
         className="viewport-canvas"

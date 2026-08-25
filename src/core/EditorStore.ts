@@ -89,7 +89,8 @@ export interface EditorState {
   isolateNode: (id: number) => void;
   importOBJ: (file: File) => void;
   importTexture: (file: File) => void;
-  addCustomMeshNode: (meshAssetId: string, name: string) => void;
+  addCustomMeshNode: (meshAssetId: string, name: string, position?: Vec3) => void;
+  reorderNode: (id: number, parentId: number, index: number) => void;
   exportOBJ: () => void;
   exportJSON: () => void;
   exportPNG: () => void;
@@ -708,14 +709,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     get().log('info', `Imported texture: ${file.name}`);
   },
 
-  addCustomMeshNode: (meshAssetId, name) => {
+  addCustomMeshNode: (meshAssetId, name, position) => {
     const state = get();
     state.takeSnapshot();
     const node = state.scene.createPrimitive('custom', name);
     node.meshAssetId = meshAssetId;
+    if (position) node.position = position.clone();
     state.materials.set(node.id, createDefaultMaterial());
     set({ selectedNodeId: node.id, undoRevision: get().undoRevision + 1 });
     get().log('info', `Added custom mesh: ${name}`);
+  },
+
+  reorderNode: (id, parentId, index) => {
+    const state = get();
+    state.takeSnapshot();
+    if (state.scene.reparentAt(id, parentId, index)) {
+      set({ scene: state.scene, undoRevision: get().undoRevision + 1 });
+      get().log('info', `Reordered node ${id} into parent ${parentId}[${index}]`);
+    }
   },
 
   exportOBJ: () => {
@@ -840,5 +851,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ scene: state.scene, particleEmitters: [...state.particleEmitters] });
   },
 }));
+
 
 

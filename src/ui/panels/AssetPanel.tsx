@@ -27,6 +27,15 @@ export function AssetPanel() {
             <div
               key={asset.id}
               className="asset-item"
+              draggable={asset.type === 'mesh'}
+              onDragStart={(e) => {
+                if (asset.type !== 'mesh') return;
+                e.dataTransfer.setData(
+                  'application/x-noise3d-asset',
+                  JSON.stringify({ assetId: asset.id, name: asset.name }),
+                );
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
               onDoubleClick={() => asset.type === 'mesh' && addCustomMeshNode(asset.id, asset.name)}
               onContextMenu={(e) => {
                 e.preventDefault();

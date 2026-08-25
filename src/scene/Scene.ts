@@ -1,4 +1,4 @@
-import { SceneNode, type PrimitiveType } from './SceneNode';
+﻿import { SceneNode, type PrimitiveType } from './SceneNode';
 import type { Light } from './Light';
 
 export type { PrimitiveType };
@@ -77,30 +77,45 @@ export class Scene {
   }
 
   moveNode(id: number, newParentId: number): void {
-    const node = this.nodes.get(id);
-    if (!node || id === 0) return;
-    if (this.isAncestor(id, newParentId)) return;
-
-    if (node.parentId !== null) {
-      const oldParent = this.nodes.get(node.parentId);
-      if (oldParent) {
-        oldParent.childIds = oldParent.childIds.filter((cid) => cid !== id);
-      }
-    }
-    const newParent = this.nodes.get(newParentId);
-    if (newParent) {
-      newParent.childIds.push(id);
-      node.parentId = newParentId;
-    }
+    this.reparentAt(id, newParentId, Number.MAX_SAFE_INTEGER);
   }
 
-  private isAncestor(ancestorId: number, descendantId: number): boolean {
-    let node = this.nodes.get(descendantId);
-    while (node && node.parentId !== null) {
-      if (node.parentId === ancestorId) return true;
-      node = this.nodes.get(node.parentId);
+  /** Public validity check for drag-drop affordances. */
+  canReparent(id: number, newParentId: number): boolean {
+    if (id === 0 || id === newParentId) return false;
+    const node = this.nodes.get(id);
+    if (!node) return false;
+    // cannot drop into itself or its own descendant
+    let p = this.nodes.get(newParentId);
+    while (p) {
+      if (p.id === id) return false;
+      p = p.parentId !== null ? this.nodes.get(p.parentId) : undefined;
     }
-    return false;
+    return true;
+  }
+
+  /**
+   * Move `id` under `parentId`, inserting at `index` within the parent's
+   * child list. Returns true if a change was made.
+   */
+  reparentAt(id: number, parentId: number, index: number): boolean {
+    const node = this.nodes.get(id);
+    const parent = this.nodes.get(parentId);
+    if (!node || !parent || id === 0) return false;
+    if (!this.canReparent(id, parentId)) return false;
+
+    // Detach from current parent
+    if (node.parentId !== null) {
+      const old = this.nodes.get(node.parentId);
+      if (old) old.childIds = old.childIds.filter((c) => c !== id);
+    }
+    node.parentId = parentId;
+
+    // Clamp index; when moving within the same parent the pre-removal index
+    // shifts, so just clamp against final length.
+    const idx = Math.max(0, Math.min(index, parent.childIds.length));
+    parent.childIds.splice(idx, 0, id);
+    return true;
   }
 
   clone(): Scene {
@@ -130,3 +145,4 @@ export class Scene {
     };
   }
 }
+

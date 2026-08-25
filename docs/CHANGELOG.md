@@ -1,5 +1,29 @@
 # Version History
 
+## v26.1-23.0 (2026-08-24) - LTS Release
+
+### Added
+- Asset browser -> viewport drag & drop: mesh assets spawn at the raycast
+  hit point (lifted +0.6) or at origin over empty space; payload via
+  `application/x-noise3d-asset`
+- OS file drag & drop onto window: .obj -> mesh import, .png/.jpg ->
+  texture import, .json -> scene import; dashed overlay highlights while
+  hovering (Files-type detection with enter/leave depth counting)
+- Hierarchy drag-drop zones: top/bottom edges = reorder as sibling
+  (indexed), middle or container nodes = re-parent inside; visual
+  indicators (accent lines above/below, outline box inside); invalid
+  targets show `none` drop effect and are rejected (parent into own
+  descendant leaves structure unchanged)
+- Store: `reorderNode` (one undo snapshot per gesture), `addCustomMeshNode`
+  accepts optional spawn position; Scene: public `canReparent`,
+  `reparentAt(id, parentId, index)`
+- Vite `optimizeDeps.include` pre-bundling (stops cold-start reload races
+  that flaked early-alphabet E2E files)
+
+### Tested
+- 6 new drag & drop E2E tests
+- Full suite: 337 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-22.0 (2026-08-23) - LTS Release
 
 ### Added

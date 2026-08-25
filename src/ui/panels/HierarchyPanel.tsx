@@ -11,9 +11,11 @@ export function HierarchyPanel() {
   const removeNode = useEditorStore((s) => s.removeNode);
   const addPrimitive = useEditorStore((s) => s.addPrimitive);
   const moveNode = useEditorStore((s) => s.moveNode);
+  const reorderNode = useEditorStore((s) => s.reorderNode);
   const duplicateNode = useEditorStore((s) => s.duplicateNode);
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
+  const [dropZone, setDropZone] = useState<'above' | 'inside' | 'below' | null>(null);
 
   return (
     <div className="panel hierarchy-panel">
@@ -33,6 +35,9 @@ export function HierarchyPanel() {
           onRemove={removeNode}
           onDuplicate={duplicateNode}
           onMove={moveNode}
+        onReorder={reorderNode}
+        dropZone={dropZone}
+        setDropZone={setDropZone}
           dragId={dragId}
           setDragId={setDragId}
           dragOverId={dragOverId}
@@ -52,6 +57,9 @@ interface HierarchyItemProps {
   onRemove: (id: number) => void;
   onDuplicate: (id: number) => void;
   onMove: (id: number, newParentId: number) => void;
+  onReorder: (id: number, parentId: number, index: number) => void;
+  dropZone: 'above' | 'inside' | 'below' | null;
+  setDropZone: (z: 'above' | 'inside' | 'below' | null) => void;
   dragId: number | null;
   setDragId: (id: number | null) => void;
   dragOverId: number | null;
@@ -71,17 +79,21 @@ function HierarchyItem({
   setDragId,
   dragOverId,
   setDragOverId,
+  onReorder,
+  dropZone,
+  setDropZone,
 }: HierarchyItemProps) {
   const children = scene.getChildren(node.id);
   const isSelected = selectedId === node.id;
   const isRoot = node.id === 0;
   const isDragOver = dragOverId === node.id;
   const isDragging = dragId === node.id;
+  const zoneHere = isDragOver ? dropZone : null;
 
   return (
     <div className="hierarchy-item-container">
       <div
-        className={`hierarchy-item ${isSelected ? 'selected' : ''} ${isDragOver ? 'drag-over' : ''} ${isDragging ? 'dragging' : ''}`}
+        className={`hierarchy-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${zoneHere === 'above' ? 'drop-above' : ''} ${zoneHere === 'below' ? 'drop-below' : ''} ${zoneHere === 'inside' ? 'drop-inside' : ''}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(node.id)}
         onContextMenu={(e) => {
@@ -119,26 +131,55 @@ function HierarchyItem({
           ]);
         }}
         draggable={!isRoot}
-        onDragStart={() => !isRoot && setDragId(node.id)}
+        onDragStart={(e) => {
+          if (isRoot) return;
+          setDragId(node.id);
+          e.dataTransfer.setData('text/x-noise3d-node', String(node.id));
+          e.dataTransfer.effectAllowed = 'move';
+        }}
         onDragEnd={() => {
           setDragId(null);
           setDragOverId(null);
+          setDropZone(null);
         }}
         onDragOver={(e) => {
-          if (dragId !== null && dragId !== node.id) {
-            e.preventDefault();
-            setDragOverId(node.id);
+          if (dragId === null || dragId === node.id) return;
+          if (!scene.canReparent(dragId, node.id)) {
+            e.dataTransfer.dropEffect = 'none';
+            setDropZone(null);
+            return;
           }
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const r = e.currentTarget.getBoundingClientRect();
+          const ry = e.clientY - r.top;
+          let zone: 'above' | 'inside' | 'below';
+          if (isRoot || children.length > 0) zone = 'inside';
+          else if (ry < r.height * 0.3) zone = 'above';
+          else if (ry > r.height * 0.7) zone = 'below';
+          else zone = 'inside';
+          setDragOverId(node.id);
+          setDropZone(zone);
         }}
         onDrop={(e) => {
           e.preventDefault();
-          if (dragId !== null && dragId !== node.id && !isRoot) {
-            onMove(dragId, node.id);
-          } else if (dragId !== null && isRoot) {
-            onMove(dragId, 0);
+          if (dragId !== null && dragId !== node.id) {
+            const targetParent = isRoot ? 0 : node.id;
+            if (dropZone === 'above' || dropZone === 'below') {
+              // Reorder as sibling next to this node
+              const parent = node.parentId ?? 0;
+              const siblings = scene.getChildren(parent).map((n) => n.id);
+              const idx = siblings.indexOf(node.id);
+              onReorder(dragId, parent, dropZone === 'above' ? idx : idx + 1);
+            } else if (!isRoot) {
+              onMove(dragId, targetParent);
+            } else {
+              onMove(dragId, 0);
+            }
           }
           setDragId(null);
           setDragOverId(null);
+          setDropZone(null);
         }}
       >
         <span className="hierarchy-icon">
@@ -185,10 +226,14 @@ function HierarchyItem({
           setDragId={setDragId}
           dragOverId={dragOverId}
           setDragOverId={setDragOverId}
+          onReorder={onReorder}
+          dropZone={dropZone}
+          setDropZone={setDropZone}
         />
       ))}
     </div>
   );
 }
+
 
 
