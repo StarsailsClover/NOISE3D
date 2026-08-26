@@ -82,6 +82,7 @@ export interface EditorState {
   duplicateNode: (id: number) => void;
   moveNode: (id: number, newParentId: number) => void;
   takeSnapshot: () => void;
+  dirty: boolean;
   undoRevision: number;
   assets: Asset[];
   removeAsset: (id: string) => void;
@@ -163,6 +164,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   frameSelectedTrigger: 0,
   sceneName: 'Untitled',
   undoRevision: 0,
+  dirty: false,
   assets: [],
   isolatedNodeId: null,
   groundMarker: null,
@@ -575,7 +577,7 @@ get().log('info', `Created ${type}: ${node.name}`);
   saveScene: (name) => {
     const state = get();
     SceneSerializer.saveToLocal(state.scene, state.materials, name, state.cameraState ?? undefined);
-    set({ sceneName: name });
+    set({ sceneName: name, dirty: false });
     get().log('info', `Scene saved: ${name}`);
   },
 
@@ -592,6 +594,7 @@ get().log('info', `Created ${type}: ${node.name}`);
       selectedLightId: null,
       sceneName: result.name,
       cameraState: result.camera ?? null,
+      dirty: false,
     });
     get().log('info', `Scene loaded: ${name}`);
   },
@@ -612,6 +615,7 @@ get().log('info', `Created ${type}: ${node.name}`);
         selectedLightId: null,
         sceneName: result.name,
         cameraState: result.camera ?? null,
+        dirty: false,
       });
       get().log('info', `Scene loaded from file: ${file.name}`);
     } catch (e) {
@@ -628,6 +632,7 @@ get().log('info', `Created ${type}: ${node.name}`);
       selectedNodeId: null,
       selectedLightId: null,
       sceneName: 'Untitled',
+      dirty: false,
     });
     get().log('info', 'New scene created');
   },
@@ -635,6 +640,7 @@ get().log('info', `Created ${type}: ${node.name}`);
   takeSnapshot: () => {
     const state = get();
     undoManager.snapshot(state.scene, state.materials, state.selectedNodeId, state.sceneName);
+    if (!state.dirty) set({ dirty: true });
   },
 
   undo: () => {
@@ -861,6 +867,7 @@ get().log('info', `Added custom mesh: ${name}`);
     set({ scene: state.scene, particleEmitters: [...state.particleEmitters] });
   },
 }));
+
 
 
 

@@ -1,5 +1,24 @@
 # Version History
 
+## v26.1-25.0 (2026-08-24) - LTS Release
+
+### Added
+- Persistent status bar (24px, bottom):
+  - Left: contextual mouse hints that change with gizmo mode and fly state
+  - Center: scene name + amber dirty dot when unsaved changes exist
+  - Right: node count | light count | FPS (amber < 45, red < 30)
+- Dirty tracking: `takeSnapshot` marks dirty; save/load/new clear it
+- Styled tooltips (dark card, 300ms delay) on all toolbar-zone buttons;
+  native title attributes preserved (tests and a11y unaffected)
+- First-run onboarding tour: 4 steps (Toolbar / Hierarchy / Viewport /
+  Inspector) with spotlight outline, Back/Next/Skip; completion flag in
+  localStorage; overlay is pointer-transparent so it never blocks editing
+
+### Tested
+- 8 new E2E tests (hints, dirty dot lifecycle, counts, FPS, tooltip,
+  tour flow + persistence)
+- Full suite: 352 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-24.0 (2026-08-24) - LTS Release
 
 ### Added

@@ -1,4 +1,4 @@
-import { useEditorStore } from '@core/EditorStore';
+﻿import { useEditorStore } from '@core/EditorStore';
 import { FileMenu } from './FileMenu';
 import { getPreferredBackend } from '@renderer/RendererFactory';
 import { WorkspaceTabs } from './WorkspaceTabs';
@@ -46,9 +46,9 @@ export function Toolbar() {
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
-        <button className="toolbar-btn" onClick={() => addPrimitive('cube')}>Cube</button>
-        <button className="toolbar-btn" onClick={() => addPrimitive('sphere')}>Sphere</button>
-        <button className="toolbar-btn" onClick={() => addPrimitive('plane')}>Plane</button>
+        <button className="toolbar-btn" onClick={() => addPrimitive('cube')} title="Add Cube">Cube</button>
+        <button className="toolbar-btn" onClick={() => addPrimitive('sphere')} title="Add Sphere">Sphere</button>
+        <button className="toolbar-btn" onClick={() => addPrimitive('plane')} title="Add Plane">Plane</button>
       </div>
       <div className="toolbar-separator" />
       <div className="toolbar-group">
@@ -105,6 +105,7 @@ export function Toolbar() {
     </div>
   );
 }
+
 
 
 

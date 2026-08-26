@@ -17,6 +17,9 @@ import { CurveEditorPanel } from './panels/CurveEditorPanel';
 import { PluginManagerPanel } from './panels/PluginManagerPanel';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { ContextMenu } from './ContextMenu';
+import { StatusBar } from './StatusBar';
+import { TooltipLayer } from './TooltipLayer';
+import { Onboarding } from './Onboarding';
 import { ShortcutHelp } from './ShortcutHelp';
 import {
   useWorkspaceStore,
@@ -98,9 +101,13 @@ export function App() {
           ))}
         </div>
       </div>
+      <StatusBar />
       <ContextMenu />
       <ShortcutHelp />
+      <TooltipLayer />
+      <Onboarding />
     </div>
   );
 }
+
 
