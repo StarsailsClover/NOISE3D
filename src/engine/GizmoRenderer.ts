@@ -238,8 +238,33 @@ export class GizmoRenderer {
     gl.deleteVertexArray(vao);
   }
 
-  dispose(): void {
-    if (this.program) this.gl.deleteProgram(this.program);
+  /** 12-edge axis-aligned box outline (selection bounds / ground marker). */
+  renderAABB(
+    min: Vec3,
+    max: Vec3,
+    color: [number, number, number, number],
+    view: Mat4,
+    projection: Mat4,
+  ): void {
+    const gl = this.gl;
+    if (!this.program) return;
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'uModel'), false, Mat4.identity().data);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'uView'), false, view.data);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'uProjection'), false, projection.data);
+
+    const [x0, y0, z0] = [min.x, min.y, min.z];
+    const [x1, y1, z1] = [max.x, max.y, max.z];
+    const c: [number, number, number][] = [
+      [x0, y0, z0], [x1, y0, z0], [x1, y0, z0], [x1, y1, z0],
+      [x1, y1, z0], [x0, y1, z0], [x0, y1, z0], [x0, y0, z0],
+      [x0, y0, z1], [x1, y0, z1], [x1, y0, z1], [x1, y1, z1],
+      [x1, y1, z1], [x0, y1, z1], [x0, y1, z1], [x0, y0, z1],
+      [x0, y0, z0], [x0, y0, z1], [x1, y0, z0], [x1, y0, z1],
+      [x1, y1, z0], [x1, y1, z1], [x0, y1, z0], [x0, y1, z1],
+    ];
+    const verts = new Float32Array(c.flat());
+    this.drawRaw(verts, gl.LINES, color, gl.getUniformLocation(this.program, 'uColor'));
   }
 
   /**
@@ -391,6 +416,10 @@ export class GizmoRenderer {
     gl.bindVertexArray(null);
     gl.deleteBuffer(vbo);
     gl.deleteVertexArray(vao);
+  }
+
+  dispose(): void {
+    if (this.program) this.gl.deleteProgram(this.program);
   }
 }
 

@@ -56,6 +56,15 @@ export class Renderer {
   } | null = null;
   private gizmoRendererInst: import('@engine/GizmoRenderer').GizmoRenderer | null = null;
 
+  /** Hovered (not selected) node for thin outline feedback. */
+  public hoverNodeId: number | null = null;
+  /** All selected node ids (multi-select). */
+  public selectedIds: number[] = [];
+  /** Translucent AABB around a multi-selection. */
+  public selectionBounds: { min: Vec3; max: Vec3 } | null = null;
+  /** Temporary ground marker under hierarchy-selected node. */
+  public groundMarker: { id: number; ts: number } | null = null;
+
   public clearColor: [number, number, number, number] = [0.15, 0.15, 0.15, 1];
   public ambient: Vec3 = new Vec3(0.2, 0.2, 0.2);
   public postExposure: number = 1.0;
@@ -441,11 +450,104 @@ export class Renderer {
           gl.bindVertexArray(mesh.vao);
           gl.drawElements(gl.LINES, mesh.indexCount, mesh.indexType, 0);
           gl.bindVertexArray(null);
-
-          gl.disable(gl.BLEND);
-          gl.enable(gl.DEPTH_TEST);
         }
       }
+    }
+
+    // Additional multi-selected wireframes (same orange)
+    if (this.wireframeShader && this.selectedIds.length > 1) {
+      gl.useProgram(this.wireframeShader);
+      gl.disable(gl.DEPTH_TEST);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      const uModel = gl.getUniformLocation(this.wireframeShader, 'uModel');
+      const uView = gl.getUniformLocation(this.wireframeShader, 'uView');
+      const uProj = gl.getUniformLocation(this.wireframeShader, 'uProjection');
+      const uColor = gl.getUniformLocation(this.wireframeShader, 'uColor');
+      gl.uniformMatrix4fv(uView, false, view.data);
+      gl.uniformMatrix4fv(uProj, false, projection.data);
+      gl.uniform4f(uColor, 1, 0.6, 0, 0.8);
+      for (const id of this.selectedIds) {
+        if (id === this.selectedNodeId) continue;
+        const node = scene.getNode(id);
+        if (!node || !node.visible) continue;
+        const mesh = this.getMeshForType(node.type, node.meshAssetId);
+        if (!mesh) continue;
+        const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
+        gl.uniformMatrix4fv(uModel, false, model.data);
+        gl.bindVertexArray(mesh.vao);
+        gl.drawElements(gl.LINES, mesh.indexCount, mesh.indexType, 0);
+      }
+      gl.bindVertexArray(null);
+    }
+
+    // Hover outline: thin translucent orange on hovered (non-selected) node
+    if (
+      this.wireframeShader &&
+      this.hoverNodeId !== null &&
+      this.hoverNodeId !== this.selectedNodeId &&
+      !this.selectedIds.includes(this.hoverNodeId)
+    ) {
+      const node = scene.getNode(this.hoverNodeId);
+      if (node && node.visible) {
+        const mesh = this.getMeshForType(node.type, node.meshAssetId);
+        if (mesh) {
+          gl.useProgram(this.wireframeShader);
+          gl.disable(gl.DEPTH_TEST);
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          const uModel = gl.getUniformLocation(this.wireframeShader, 'uModel');
+          const uView = gl.getUniformLocation(this.wireframeShader, 'uView');
+          const uProj = gl.getUniformLocation(this.wireframeShader, 'uProjection');
+          const uColor = gl.getUniformLocation(this.wireframeShader, 'uColor');
+          const model = Mat4.fromTRS(node.position, node.rotation, node.scale);
+          gl.uniformMatrix4fv(uModel, false, model.data);
+          gl.uniformMatrix4fv(uView, false, view.data);
+          gl.uniformMatrix4fv(uProj, false, projection.data);
+          gl.uniform4f(uColor, 1, 0.55, 0.1, 0.3);
+          gl.bindVertexArray(mesh.vao);
+          gl.drawElements(gl.LINES, mesh.indexCount, mesh.indexType, 0);
+          gl.bindVertexArray(null);
+        }
+      }
+    }
+
+    // Multi-select group AABB + hierarchy ground marker
+    if (this.selectionBounds || this.groundMarker) {
+      if (!this.gizmoRendererInst) {
+        this.gizmoRendererInst = new GizmoRenderer(this.gl, LINE_VERTEX_SHADER, LINE_FRAGMENT_SHADER);
+      }
+      gl.disable(gl.DEPTH_TEST);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      if (this.selectionBounds) {
+        this.gizmoRendererInst.renderAABB(
+          this.selectionBounds.min,
+          this.selectionBounds.max,
+          [1, 0.6, 0, 0.45],
+          view,
+          projection,
+        );
+      }
+      if (this.groundMarker && Date.now() - this.groundMarker.ts < 1200) {
+        const n = scene.getNode(this.groundMarker.id);
+        if (n) {
+          const s = n.scale;
+          const y = n.position.y - s.y * 1.02;
+          const r = 0.45;
+          this.gizmoRendererInst.renderAABB(
+            new Vec3(n.position.x - r, y - 0.02, n.position.z - r),
+            new Vec3(n.position.x + r, y + 0.02, n.position.z + r),
+            [0.3, 0.9, 1, 0.9],
+            view,
+            projection,
+          );
+        }
+      } else if (this.groundMarker && Date.now() - this.groundMarker.ts >= 1200) {
+        this.groundMarker = null;
+      }
+      gl.disable(gl.BLEND);
+      gl.enable(gl.DEPTH_TEST);
     }
 
     // Gizmo overlay (translate/scale/rotate handles)

@@ -87,6 +87,8 @@ export interface EditorState {
   removeAsset: (id: string) => void;
   isolatedNodeId: number | null;
   isolateNode: (id: number) => void;
+  groundMarker: { id: number; ts: number } | null;
+  pingGroundMarker: (id: number) => void;
   importOBJ: (file: File) => void;
   importTexture: (file: File) => void;
   addCustomMeshNode: (meshAssetId: string, name: string, position?: Vec3) => void;
@@ -163,6 +165,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   undoRevision: 0,
   assets: [],
   isolatedNodeId: null,
+  groundMarker: null,
   postExposure: 1.0,
   postBloomThreshold: 1.0,
   postBloomIntensity: 0.3,
@@ -354,10 +357,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       get().log('info', 'Isolate cleared');
     } else {
       for (const n of state.scene.getAllNodes()) n.visible = n.id === id;
-      set({ isolatedNodeId: id, scene: state.scene, selectedNodeId: id });
+      set({ isolatedNodeId: id, scene: state.scene, selectedNodeId: id, selectedNodeIds: [id] });
       get().log('info', `Isolated node ${id}`);
     }
   },
+
+  pingGroundMarker: (id) => {
+    set({ groundMarker: { id, ts: Date.now() } });
+  },
+
   raycast: (origin, direction, maxDist) => {
     return physicsWorld.raycast(origin, direction, maxDist);
   },
@@ -399,10 +407,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   addPrimitive: (type, parentId) => {
     const state = get();
     state.takeSnapshot();
-    const node = state.scene.createPrimitive(type, undefined, parentId ?? null);
-    state.materials.set(node.id, createDefaultMaterial());
-    set({ selectedNodeId: node.id, undoRevision: get().undoRevision + 1 });
-    get().log('info', `Created ${type}: ${node.name}`);
+const node = state.scene.createPrimitive(type, undefined, parentId ?? null);
+state.materials.set(node.id, createDefaultMaterial());
+set({ selectedNodeId: node.id, selectedNodeIds: [node.id], undoRevision: get().undoRevision + 1 });
+get().log('info', `Created ${type}: ${node.name}`);
   },
 
   selectNode: (id) => {
@@ -553,7 +561,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   selectLight: (id) => {
-    set({ selectedLightId: id, selectedNodeId: null });
+    set({ selectedLightId: id, selectedNodeId: null, selectedNodeIds: [] });
   },
 
   updateLight: (id, partial) => {
@@ -638,6 +646,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         scene: restored.scene,
         materials: restored.materials,
         selectedNodeId: result.selectedNodeId,
+        selectedNodeIds: result.selectedNodeId !== null ? [result.selectedNodeId] : [],
         sceneName: result.sceneName,
         undoRevision: get().undoRevision + 1,
       });
@@ -654,6 +663,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         scene: restored.scene,
         materials: restored.materials,
         selectedNodeId: result.selectedNodeId,
+        selectedNodeIds: result.selectedNodeId !== null ? [result.selectedNodeId] : [],
         sceneName: result.sceneName,
         undoRevision: get().undoRevision + 1,
       });
@@ -676,7 +686,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (mat) {
       state.materials.set(clone.id, { ...mat, baseColor: mat.baseColor.clone(), emissive: mat.emissive.clone() });
     }
-    set({ selectedNodeId: clone.id, scene: state.scene, undoRevision: get().undoRevision + 1 });
+    set({ selectedNodeId: clone.id, selectedNodeIds: [clone.id], scene: state.scene, undoRevision: get().undoRevision + 1 });
     get().log('info', `Duplicated node: ${node.name}`);
   },
 
@@ -714,10 +724,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     state.takeSnapshot();
     const node = state.scene.createPrimitive('custom', name);
     node.meshAssetId = meshAssetId;
-    if (position) node.position = position.clone();
-    state.materials.set(node.id, createDefaultMaterial());
-    set({ selectedNodeId: node.id, undoRevision: get().undoRevision + 1 });
-    get().log('info', `Added custom mesh: ${name}`);
+if (position) node.position = position.clone();
+state.materials.set(node.id, createDefaultMaterial());
+set({ selectedNodeId: node.id, selectedNodeIds: [node.id], undoRevision: get().undoRevision + 1 });
+get().log('info', `Added custom mesh: ${name}`);
   },
 
   reorderNode: (id, parentId, index) => {
@@ -851,6 +861,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ scene: state.scene, particleEmitters: [...state.particleEmitters] });
   },
 }));
+
+
+
 
 
 

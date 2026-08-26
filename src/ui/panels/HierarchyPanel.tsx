@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { useOverlayStore } from '@core/OverlayStore';
 import { Scene } from '@scene/Scene';
@@ -16,6 +16,19 @@ export function HierarchyPanel() {
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const [dropZone, setDropZone] = useState<'above' | 'inside' | 'below' | null>(null);
+  const [flashId, setFlashId] = useState<number | null>(null);
+
+  // Scroll selected item into view + 300ms flash
+  useEffect(() => {
+    if (selectedNodeId === null) return;
+    const el = document.querySelector(`[data-node-id="${selectedNodeId}"]`);
+    if (el) {
+      el.scrollIntoView({ block: 'nearest' });
+      setFlashId(selectedNodeId);
+      const t = setTimeout(() => setFlashId(null), 320);
+      return () => clearTimeout(t);
+    }
+  }, [selectedNodeId, scene]);
 
   return (
     <div className="panel hierarchy-panel">
@@ -36,6 +49,7 @@ export function HierarchyPanel() {
           onDuplicate={duplicateNode}
           onMove={moveNode}
         onReorder={reorderNode}
+        flashId={flashId}
         dropZone={dropZone}
         setDropZone={setDropZone}
           dragId={dragId}
@@ -58,6 +72,7 @@ interface HierarchyItemProps {
   onDuplicate: (id: number) => void;
   onMove: (id: number, newParentId: number) => void;
   onReorder: (id: number, parentId: number, index: number) => void;
+  flashId: number | null;
   dropZone: 'above' | 'inside' | 'below' | null;
   setDropZone: (z: 'above' | 'inside' | 'below' | null) => void;
   dragId: number | null;
@@ -80,6 +95,7 @@ function HierarchyItem({
   dragOverId,
   setDragOverId,
   onReorder,
+  flashId,
   dropZone,
   setDropZone,
 }: HierarchyItemProps) {
@@ -93,9 +109,13 @@ function HierarchyItem({
   return (
     <div className="hierarchy-item-container">
       <div
-        className={`hierarchy-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${zoneHere === 'above' ? 'drop-above' : ''} ${zoneHere === 'below' ? 'drop-below' : ''} ${zoneHere === 'inside' ? 'drop-inside' : ''}`}
+        data-node-id={node.id}
+        className={`hierarchy-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${flashId === node.id ? 'hierarchy-flash' : ''} ${zoneHere === 'above' ? 'drop-above' : ''} ${zoneHere === 'below' ? 'drop-below' : ''} ${zoneHere === 'inside' ? 'drop-inside' : ''}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
-        onClick={() => onSelect(node.id)}
+        onClick={() => {
+          onSelect(node.id);
+          useEditorStore.getState().pingGroundMarker(node.id);
+        }}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -227,6 +247,7 @@ function HierarchyItem({
           dragOverId={dragOverId}
           setDragOverId={setDragOverId}
           onReorder={onReorder}
+          flashId={flashId}
           dropZone={dropZone}
           setDropZone={setDropZone}
         />
@@ -234,6 +255,8 @@ function HierarchyItem({
     </div>
   );
 }
+
+
 
 
 

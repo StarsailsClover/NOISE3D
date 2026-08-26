@@ -1,5 +1,33 @@
 # Version History
 
+## v26.1-24.0 (2026-08-24) - LTS Release
+
+### Added
+- Hover outline: thin translucent orange wireframe on the node under the
+  cursor; throttled raycast (~30 Hz), independent of gizmo-handle hover
+  (both feedback channels show together, Blender-style)
+- Multi-select wireframes: every selected node draws the orange outline
+- Multi-selection group AABB: translucent orange box enclosing all
+  selected nodes
+- Hierarchy selection feedback: selected item scrolls into view and
+  flashes 300 ms; a temporary cyan ground marker is drawn under the
+  object for 1.2 s
+- Double-click empty space = frame all (isometric reframe)
+- Shift+click viewport selection now routes through selectNodeMulti
+  (add/toggle) — previously it silently replaced the selection
+- `__noise3d_gizmo.sel()` and `state().hoverObj` debug hooks
+
+### Fixed
+- selectedNodeIds desync: addPrimitive / addCustomMeshNode / duplicateNode /
+  isolateNode / selectLight / undo / redo now keep the multi-select array
+  in sync with selectedNodeId (root cause of lost shift-click additions)
+- GizmoRenderer class structure restored (renderAABB insertion had closed
+  the class early, orphaning renderGizmo/drawRaw)
+
+### Tested
+- 6 new selection-feedback E2E tests
+- Full suite: 344 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-23.0 (2026-08-24) - LTS Release
 
 ### Added

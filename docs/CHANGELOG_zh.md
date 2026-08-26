@@ -1,5 +1,30 @@
 # 版本历史
 
+## v26.1-24.0 (2026-08-24) - LTS 发布
+
+### 新增
+- 悬停轮廓: 光标下节点显示细半透明橙色线框; 射线节流 (~30 Hz),
+  与 gizmo 手柄悬停相互独立 (两条反馈通道同时显示, Blender 风格)
+- 多选线框: 每个选中节点都绘制橙色轮廓
+- 多选组包围盒: 包裹全部选中节点的半透明橙色 AABB
+- 层级选择反馈: 选中项滚动到可视区并闪烁 300 ms; 物体下方绘制
+  持续 1.2 s 的青色地面标记
+- 双击空白 = 全景取景 (等轴测重取景)
+- 视口 Shift+点击选择改走 selectNodeMulti (添加/切换) —
+  此前会静默替换整个选择
+- `__noise3d_gizmo.sel()` 与 `state().hoverObj` 调试钩子
+
+### 修复
+- selectedNodeIds 失同步: addPrimitive / addCustomMeshNode / duplicateNode /
+  isolateNode / selectLight / undo / redo 现在保持多选数组与
+  selectedNodeId 一致 (shift-click 增选丢失的根因)
+- GizmoRenderer 类结构恢复 (renderAABB 插入过早关闭了类,
+  使 renderGizmo/drawRaw 游离类外)
+
+### 测试
+- 6 个新选择反馈 E2E 测试
+- 全量套件: 344 E2E 通过 / 0 失败 + 6 单元通过
+
 ## v26.1-23.0 (2026-08-24) - LTS 发布
 
 ### 新增

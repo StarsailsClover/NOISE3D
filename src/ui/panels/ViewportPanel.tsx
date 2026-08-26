@@ -26,6 +26,8 @@ export function ViewportPanel() {
   const [cursor, setCursor] = useState<'default' | 'grab' | 'grabbing'>('default');
   const flyActiveRef = useRef(false);
   const keysRef = useRef<Set<string>>(new Set());
+  const hoverObjRef = useRef<number | null>(null);
+  const lastHoverRayRef = useRef(0);
 
   const scene = useEditorStore((s) => s.scene);
   const showGrid = useEditorStore((s) => s.showGrid);
@@ -147,6 +149,25 @@ export function ViewportPanel() {
         (r as any).gizmoVisual = null;
       }
 
+      // Selection feedback fields
+      (r as any).hoverNodeId = hoverObjRef.current;
+      (r as any).selectedIds = stNow.selectedNodeIds;
+      if (stNow.selectedNodeIds.length > 1) {
+        const selNodes = stNow.selectedNodeIds
+          .map((id) => scene.getNode(id))
+          .filter((n): n is NonNullable<typeof n> => !!n && n.visible);
+        const b = computeSceneBounds(selNodes);
+        (r as any).selectionBounds = b
+          ? {
+              min: new Vec3(b.center.x - b.radius, b.center.y - b.radius, b.center.z - b.radius),
+              max: new Vec3(b.center.x + b.radius, b.center.y + b.radius, b.center.z + b.radius),
+            }
+          : null;
+      } else {
+        (r as any).selectionBounds = null;
+      }
+      (r as any).groundMarker = stNow.groundMarker;
+
       for (const [id, mat] of materials) {
         r.setMaterial(id, mat);
       }
@@ -211,6 +232,7 @@ export function ViewportPanel() {
         hover: gizmoRef.current.hoverHandle,
         active: gizmoRef.current.activeHandle,
         dragging: gizmoRef.current.isDragging,
+        hoverObj: hoverObjRef.current,
       }),
       pick: (xCss: number, yCss: number) => {
         const canvas = canvasRef.current;
@@ -245,6 +267,10 @@ export function ViewportPanel() {
         gizmoRef.current.cancelDrag();
         gizmoDraggingRef.current = false;
         setCursor('default');
+      },
+      sel: () => {
+        const s = useEditorStore.getState();
+        return { ids: s.selectedNodeIds, primary: s.selectedNodeId, marker: s.groundMarker };
       },
     };
     (window as any).__noise3d_gizmo = api;
@@ -291,7 +317,8 @@ export function ViewportPanel() {
           if (handle && handle.kind === 'plane' && objId !== null) handle = null;
         }
 
-        if (handle && selNode) {
+        // Shift-click always selects/toggles, even over the gizmo (Blender)
+        if (handle && selNode && !e.shiftKey) {
           st0.takeSnapshot(); // one undo entry per gesture
           gizmoRef.current.startDrag(
             handle as never, x, y,
@@ -306,7 +333,11 @@ export function ViewportPanel() {
 
         dragModeRef.current = 'none';
         isDraggingRef.current = true;
-        selectNode(objId);
+        if (objId !== null && e.shiftKey) {
+          useEditorStore.getState().selectNodeMulti(objId, true);
+        } else if (objId !== null || !e.shiftKey) {
+          selectNode(objId);
+        }
       } else if (e.button === 2) {
         // Right button: enter free-fly look mode
         cameraRef.current.beginFly();
@@ -394,6 +425,16 @@ export function ViewportPanel() {
         gizmoRef.current.setHover(handle as never);
         const nextCursor = handle ? 'grab' : 'default';
         setCursor((c) => (c === nextCursor || c === 'grabbing' ? c : nextCursor));
+
+        // Throttled (~30Hz) object hover raycast for outline feedback.
+        // Independent of gizmo-handle hover (both channels show together).
+        const nowMs = performance.now();
+        if (nowMs - lastHoverRayRef.current >= 33) {
+          lastHoverRayRef.current = nowMs;
+          hoverObjRef.current = raycastPick(
+            st.scene, x, y, rect.width, rect.height, cam,
+          );
+        }
       }
 
       lastMouseRef.current = { x, y };
@@ -477,6 +518,18 @@ export function ViewportPanel() {
     e.dataTransfer.dropEffect = 'copy';
   }, []);
 
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const id = raycastPick(scene, x, y, rect.width, rect.height, cameraRef.current);
+      if (id === null) frameAllNodes(); // double-click empty = frame all
+    },
+    [scene, frameAllNodes],
+  );
   const handleOsDragEnter = useCallback((e: React.DragEvent) => {
     if (!Array.from(e.dataTransfer.types).includes('Files')) return;
     e.preventDefault();
@@ -563,6 +616,7 @@ export function ViewportPanel() {
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
         onContextMenu={handleContextMenu}
+        onDoubleClick={handleDoubleClick}
       />
       <ViewportToolbar />
       <ViewportGizmoControls />
@@ -660,5 +714,7 @@ function ViewportGizmoControls() {
     </div>
   );
 }
+
+
 
 
