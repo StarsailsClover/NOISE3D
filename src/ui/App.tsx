@@ -20,6 +20,7 @@ import { ContextMenu } from './ContextMenu';
 import { StatusBar } from './StatusBar';
 import { TooltipLayer } from './TooltipLayer';
 import { Onboarding } from './Onboarding';
+import { CommandPalette } from './CommandPalette';
 import { ShortcutHelp } from './ShortcutHelp';
 import {
   useWorkspaceStore,
@@ -104,10 +105,12 @@ export function App() {
       <StatusBar />
       <ContextMenu />
       <ShortcutHelp />
+      <CommandPalette />
       <TooltipLayer />
       <Onboarding />
     </div>
   );
 }
+
 
 

@@ -1,4 +1,4 @@
-﻿import { useEditorStore } from '@core/EditorStore';
+import { useEditorStore } from '@core/EditorStore';
 import { FileMenu } from './FileMenu';
 import { getPreferredBackend } from '@renderer/RendererFactory';
 import { WorkspaceTabs } from './WorkspaceTabs';
@@ -105,6 +105,7 @@ export function Toolbar() {
     </div>
   );
 }
+
 
 
 

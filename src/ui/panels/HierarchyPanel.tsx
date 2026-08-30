@@ -16,6 +16,7 @@ export function HierarchyPanel() {
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const [dropZone, setDropZone] = useState<'above' | 'inside' | 'below' | null>(null);
+  const [search, setSearch] = useState('');
   const [flashId, setFlashId] = useState<number | null>(null);
 
   // Scroll selected item into view + 300ms flash
@@ -38,11 +39,24 @@ export function HierarchyPanel() {
           <button className="panel-btn" onClick={() => addPrimitive('cube')} title="Add Cube">+</button>
         </div>
       </div>
+      <div className="hierarchy-search">
+        <input
+          className="hierarchy-search-input"
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button className="hierarchy-search-clear" onClick={() => setSearch('')}>x</button>
+        )}
+      </div>
       <div className="panel-body">
         <HierarchyItem
           node={scene.root}
           scene={scene}
           depth={0}
+          filter={search.trim().toLowerCase()}
           selectedId={selectedNodeId}
           onSelect={selectNode}
           onRemove={removeNode}
@@ -66,6 +80,7 @@ interface HierarchyItemProps {
   node: SceneNode;
   scene: Scene;
   depth: number;
+  filter: string;
   selectedId: number | null;
   onSelect: (id: number) => void;
   onRemove: (id: number) => void;
@@ -85,6 +100,7 @@ function HierarchyItem({
   node,
   scene,
   depth,
+  filter,
   selectedId,
   onSelect,
   onRemove,
@@ -105,6 +121,16 @@ function HierarchyItem({
   const isDragOver = dragOverId === node.id;
   const isDragging = dragId === node.id;
   const zoneHere = isDragOver ? dropZone : null;
+
+  // Live search filter: show node if it or any descendant matches
+  const matchesHere = !filter || node.name.toLowerCase().includes(filter);
+  const childMatches = (n: SceneNode): boolean => {
+    if (n.name.toLowerCase().includes(filter)) return true;
+    return scene.getChildren(n.id).some(childMatches);
+  };
+  if (filter && !matchesHere && !scene.getChildren(node.id).some(childMatches)) {
+    return null;
+  }
 
   return (
     <div className="hierarchy-item-container">
@@ -237,6 +263,7 @@ function HierarchyItem({
           node={child}
           scene={scene}
           depth={depth + 1}
+          filter={filter}
           selectedId={selectedId}
           onSelect={onSelect}
           onRemove={onRemove}
@@ -255,6 +282,7 @@ function HierarchyItem({
     </div>
   );
 }
+
 
 
 

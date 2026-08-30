@@ -41,9 +41,34 @@ v{YY}.{MAJOR}-{MM}.{MINOR}.{TYPE}
 
 ## 分支策略
 
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
+
+与 BC 开发流程 (Git 控制) 对齐:
+
 - `main` -- 始终稳定, LTS 发布从此标记
-- `dev` -- 开发分支, 进行中的工作
-- 功能分支: `feat/webgpu-backend`, `feat/code-editor` 等
+- 每个增量 (BC 术语中的"大版本") 在独立特性分支上开发, 例如
+  `feat/v26.1-26.0-command-palette`, 发布时以合并提交进入 `main`
+- 所有提交经 SSH 签名 (`commit.gpgsign=true`, `gpg.format=ssh`)
+- 提交/合并/PR 信息使用英文
+- `.gitignore` 保证仓库仅含必要源码、文档与脚本
+
+### BC 版本控制映射
+
+BC 方案 `v{Year}.{Major}-Alpha {N}` (每个大版本十个 Alpha; Alpha 10 即
+LTS 发布, 通常不显示) 与本仓库日历语义标签的映射:
+
+| BC 概念 | 本仓库 |
+|---------|--------|
+| 大版本 | `v26.1` (年 26, 主版本 1) |
+| Alpha 1..9 | `v26.1-XX.0.RC` 预发布 |
+| Alpha 10 / 大版本发布 | `v26.1-XX.0.LTS` 发布 |
+| 子大版本 (例外) | `v26.1-20.1` 风格热修复 |
+| 预发布发布 | RC 标签 + 含不稳定声明的变更日志 |
+| 正式发布发布 | 完整回归轮次后的 LTS 标签 |
+
+每个大版本的主题记录于 `docs/ROADMAP.md` 与 `docs/ROADMAP-UX.md`;
+健壮性工作与缺陷修复随每个增量同行。规划下一增量前对上一增量执行
+30 分钟模拟使用与恶意攻击测试 (Playwright 全量轮次即此评估)。
 
 ## 提交规范
 
