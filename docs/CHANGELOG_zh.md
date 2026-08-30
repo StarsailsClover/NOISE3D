@@ -2,6 +2,31 @@
 
 <!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
+## v26.1-27.0 (2026-08-25) - LTS 发布
+
+### 新增
+- 自绘控件库 `src/ui/widgets.tsx` -- 编辑器面板中不再保留任何原生 H5
+  表单控件 (响应用户反馈, 对标 Blender 级控件质量):
+  - `Slider`: 整条轨道可拖拽, 已填值条, 悬停 `<` `>` 步进箭头,
+    Shift 精度 / Ctrl 吸附, 方向键微调, ARIA slider
+  - `Dropdown`: 样式化弹出列表框替换所有原生 `<select>`;
+    Escape/点击外部关闭, ARIA listbox
+  - `Toggle`: Blender 风格勾选方块, ARIA checkbox 语义
+  - `ColorSwatch`: 样式化色板按钮, 委托隐藏的原生取色对话框
+    (保留 OS 级取色能力, 移除页内原生外观)
+- 全面板采用: Inspector (金属度/粗糙度/自发光/双面/UV/组件属性),
+  Light (颜色/强度/范围/锥角), Environment (天空下拉/天空颜色/
+  雾开关+密度/笔刷强度), MeshEdit (UV 下拉/挤出/倒角), Particle
+  (4 滑块), RenderSettings (曝光/bloom x2), Timeline (时间滑块)
+- 移除遗留原生 range CSS
+
+### 变更
+- 组件属性布尔/数值现渲染 Toggle/NumberField
+- v9/v14/v15/v17/v18 测试迁移至控件选择器
+
+### 测试
+- 全量套件: 359 E2E 通过 / 0 失败 + 6 单元通过
+
 ## v26.1-26.0 (2026-08-24) - LTS 发布
 
 > 预发布说明: 本 Alpha 阶段增量在晋级前已完成一轮完整 Playwright 回归;

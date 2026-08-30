@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('NOISE3D v8 - Export & Post-Processing', () => {
   test('render settings panel is visible', async ({ page }) => {
@@ -24,18 +24,18 @@ test.describe('NOISE3D v8 - Export & Post-Processing', () => {
   test('exposure slider has default value', async ({ page }) => {
     await page.goto('/?ws=rendering');
     const slider = page.locator('.render-settings-panel .inspector-slider').first();
-    await expect(slider).toHaveValue('1');
+    await expect(slider.locator('.w-slider-text')).toHaveText('1.00');
   });
 
   test('exposure slider updates value', async ({ page }) => {
     await page.goto('/?ws=rendering');
     const slider = page.locator('.render-settings-panel .inspector-slider').first();
-    await slider.evaluate((el: HTMLInputElement) => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-      setter?.call(el, '2');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('.render-settings-panel .inspector-slider-value').first()).toContainText('2');
+    const box = await slider.boundingBox();
+    if (!box) throw new Error('no slider box');
+    // Exposure 0.1..3, click where value = 2 => fraction (2-0.1)/2.9
+    const frac = (2 - 0.1) / 2.9;
+    await slider.click({ position: { x: box.width * frac, y: box.height / 2 } });
+    await expect(page.locator('.render-settings-panel .w-slider-text').first()).toHaveText('2.00');
   });
 
   test('file menu has export OBJ option', async ({ page }) => {
@@ -81,12 +81,12 @@ test.describe('NOISE3D v8 - Export & Post-Processing', () => {
     await page.goto('/?ws=rendering');
     const sliders = page.locator('.render-settings-panel .inspector-slider');
     const bloomSlider = sliders.nth(2);
-    await bloomSlider.evaluate((el: HTMLInputElement) => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-      setter?.call(el, '1.5');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('.render-settings-panel .inspector-slider-value').nth(2)).toContainText('1.5');
+    const box = await bloomSlider.boundingBox();
+    if (!box) throw new Error('no slider box');
+    // Bloom intensity 0..2, click at 75% => 1.5
+    await bloomSlider.click({ position: { x: box.width * 0.75, y: box.height / 2 } });
+    await expect(page.locator('.render-settings-panel .w-slider-text').nth(2)).toHaveText('1.50');
   });
 });
+
 

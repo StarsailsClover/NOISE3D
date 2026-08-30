@@ -81,12 +81,11 @@ test.describe('NOISE3D v4 - Lighting System', () => {
     await page.goto('/?ws=rendering');
     await page.locator('.light-item').first().click();
     const slider = page.locator('.light-inspector .inspector-slider').first();
-    await slider.evaluate((el: HTMLInputElement) => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-      setter?.call(el, '5');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('.light-inspector .inspector-slider-value').first()).toContainText('5');
+    const box = await slider.boundingBox();
+    if (!box) throw new Error('no slider box');
+    // Intensity range 0..50, click at 10% => 5.0
+    await slider.click({ position: { x: box.width * 0.1, y: box.height / 2 } });
+    await expect(page.locator('.light-inspector .w-slider-text').first()).toHaveText('5.0');
   });
 
   test('light color picker exists', async ({ page }) => {

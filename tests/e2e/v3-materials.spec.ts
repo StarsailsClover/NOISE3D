@@ -1,5 +1,11 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
+async function setSliderValue(page: import('@playwright/test').Page, row: import('@playwright/test').Locator, frac: number) {
+  const box = await row.boundingBox();
+  if (!box) throw new Error('no slider box');
+  const x = box.x + Math.max(2, Math.min(box.width - 2, box.width * frac));
+  await page.mouse.click(x, box.y + box.height / 2);
+}
 test.describe('NOISE3D v3 - Material System', () => {
   test('material presets are visible when node selected', async ({ page }) => {
     await page.goto('/');
@@ -21,8 +27,7 @@ test.describe('NOISE3D v3 - Material System', () => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     await expect(page.locator('.inspector-slider').first()).toBeVisible();
-    const metallicSlider = page.locator('.inspector-slider-row').first().locator('input');
-    await expect(metallicSlider).toHaveValue('0');
+    await expect(page.locator('.inspector-slider .w-slider-text').first()).toHaveText('0.00');
   });
 
   test('roughness slider is visible', async ({ page }) => {
@@ -35,15 +40,12 @@ test.describe('NOISE3D v3 - Material System', () => {
   test('metallic slider value updates', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    const metallicSlider = page.locator('.inspector-slider-row').first().locator('input');
-    await metallicSlider.evaluate((el: HTMLInputElement) => {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype, 'value'
-      )?.set;
-      nativeInputValueSetter?.call(el, '1');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('.inspector-slider-value').first()).toContainText('1.0');
+    // Click near the right end of the track (metallic range 0..1)
+    const track = page.locator('.inspector-slider').first();
+    const box = await track.boundingBox();
+    if (!box) throw new Error('no slider box');
+    await track.click({ position: { x: box.width - 2, y: box.height / 2 } });
+    await expect(page.locator('.inspector-slider .w-slider-text').first()).toHaveText('1.00');
   });
 
   test('base color picker is visible', async ({ page }) => {
@@ -64,14 +66,10 @@ test.describe('NOISE3D v3 - Material System', () => {
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     const emissiveSliders = page.locator('.inspector-slider');
     const intensitySlider = emissiveSliders.nth(2);
-    await intensitySlider.evaluate((el: HTMLInputElement) => {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype, 'value'
-      )?.set;
-      nativeInputValueSetter?.call(el, '2.5');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('.inspector-slider-value').nth(2)).toContainText('2.5');
+    const ib = await intensitySlider.boundingBox();
+    if (!ib) throw new Error('no slider box');
+    await intensitySlider.click({ position: { x: ib.width * 0.5, y: ib.height / 2 } });
+    await expect(page.locator('.inspector-slider .w-slider-text').nth(2)).toHaveText('2.5');
   });
 
   test('texture UV tiling inputs are visible', async ({ page }) => {
@@ -83,24 +81,23 @@ test.describe('NOISE3D v3 - Material System', () => {
   test('double sided checkbox is visible', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    await expect(page.locator('.inspector-checkbox-row')).toBeVisible();
+    await expect(page.locator('.w-toggle').first()).toBeVisible();
   });
 
   test('double sided checkbox toggles', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    const checkbox = page.locator('.inspector-checkbox-row input[type="checkbox"]');
-    await expect(checkbox).not.toBeChecked();
-    await checkbox.click({ force: true });
-    await expect(checkbox).toBeChecked();
+    const toggle = page.locator('.w-toggle').first();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
   });
 
   test('applying Metal preset sets metallic to 1', async ({ page }) => {
     await page.goto('/');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     await page.locator('.material-preset-btn:has-text("Metal")').click();
-    const metallicSlider = page.locator('.inspector-slider-row').first().locator('input');
-    await expect(metallicSlider).toHaveValue('1');
+    await expect(page.locator('.inspector-slider .w-slider-text').first()).toHaveText('1.00');
   });
 
   test('material persists when switching nodes', async ({ page }) => {
@@ -109,7 +106,10 @@ test.describe('NOISE3D v3 - Material System', () => {
     await page.locator('.material-preset-btn:has-text("Emissive")').click();
     await page.locator('.viewport-toolbar button:has-text("Sphere")').click();
     await page.locator('.hierarchy-item').filter({ hasText: 'Cube' }).click();
-    const metallicSlider = page.locator('.inspector-slider-row').first().locator('input');
-    await expect(metallicSlider).toHaveValue('0');
+    await expect(page.locator('.inspector-slider .w-slider-text').first()).toHaveText('0.00');
   });
 });
+
+
+
+

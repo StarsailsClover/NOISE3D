@@ -43,23 +43,26 @@ test.describe('NOISE3D v26.1-15.0 - Terrain & Environment', () => {
     await page.goto('/?ws=shading');
     const select = page.locator('.env-select');
     await expect(select).toBeVisible();
-    const options = select.locator('option');
+    await select.locator('.w-dropdown-btn').click();
+    const options = page.locator('.w-dropdown-pop .w-dropdown-item');
     await expect(options).toHaveCount(3);
+    await page.keyboard.press('Escape');
   });
 
   test('sky type can be changed', async ({ page }) => {
     await page.goto('/?ws=shading');
-    await page.locator('.env-select').selectOption('procedural');
-    await expect(page.locator('.env-select')).toHaveValue('procedural');
+    await page.locator('.env-select .w-dropdown-btn').click();
+    await page.locator('.w-dropdown-item:has-text("Procedural")').click();
+    await expect(page.locator('.env-select .w-dropdown-btn')).toContainText('Procedural');
   });
 
   test('fog checkbox toggles', async ({ page }) => {
     await page.goto('/?ws=shading');
     await expect(page.locator('.inspector-label:has-text("Fog")')).toBeVisible();
-    const fogCheckbox = page.locator('.environment-panel input[type="checkbox"]');
-    await expect(fogCheckbox).not.toBeChecked();
-    await fogCheckbox.check({ force: true });
-    await expect(fogCheckbox).toBeChecked();
+    const fogToggle = page.locator('.environment-panel .w-toggle').first();
+    await expect(fogToggle).toHaveAttribute('aria-checked', 'false');
+    await fogToggle.click();
+    await expect(fogToggle).toHaveAttribute('aria-checked', 'true');
   });
 
   test('fog density slider is visible', async ({ page }) => {

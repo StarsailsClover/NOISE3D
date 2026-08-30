@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('NOISE3D v26.1-12.0 - Component System & Prefabs', () => {
   test('component add dropdown exists in inspector', async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe('NOISE3D v26.1-12.0 - Component System & Prefabs', () => {
 
     const gravityProp = page.locator('.component-property:has-text("Use Gravity")');
     await expect(gravityProp).toBeVisible();
-    await expect(gravityProp.locator('input[type="checkbox"]')).toBeChecked();
+    await expect(gravityProp.locator('.w-toggle')).toHaveAttribute('aria-checked', 'true');
   });
 
   test('remove component from node', async ({ page }) => {
@@ -146,18 +146,17 @@ test.describe('NOISE3D v26.1-12.0 - Component System & Prefabs', () => {
 
     // Find the Mass input and change it
     const massProp = page.locator('.component-property:has-text("Mass")');
-    const massInput = massProp.locator('input[type="number"]');
+    const massInput = massProp.locator('.numfield-display');
 
-    // Use evaluate to set value and dispatch React-compatible event
-    await massInput.evaluate((el: HTMLInputElement) => {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
-      nativeInputValueSetter?.call(el, '5');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
+    // Click into the field to enter edit mode, then type the new value
+    await massInput.click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type('5');
+    await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
 
     // Value should have updated
-    await expect(massInput).toHaveValue('5');
+    await expect(massInput).toHaveValue('5.00');
   });
 
   test('components persist when adding and removing nodes', async ({ page }) => {
@@ -182,3 +181,4 @@ test.describe('NOISE3D v26.1-12.0 - Component System & Prefabs', () => {
     }
   });
 });
+

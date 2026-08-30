@@ -1,4 +1,5 @@
-import { useEditorStore } from '@core/EditorStore';
+﻿import { useEditorStore } from '@core/EditorStore';
+import { Slider } from '../widgets';
 
 export function TimelinePanel() {
   const animationClips = useEditorStore((s) => s.animationClips);
@@ -51,14 +52,14 @@ export function TimelinePanel() {
             {selectedClip && (
               <>
                 <div className="timeline-track">
-                  <input
+                  <Slider
                     className="timeline-slider"
-                    type="range"
-                    min="0"
-                    max={duration}
-                    step="0.01"
                     value={currentTime}
-                    onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+                    min={0}
+                    max={duration}
+                    step={0.01}
+                    format={(v) => v.toFixed(2)}
+                    onChange={(v) => setCurrentTime(v)}
                   />
                   <span className="timeline-time">
                     {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
@@ -108,3 +109,4 @@ export function TimelinePanel() {
     </div>
   );
 }
+

@@ -20,9 +20,11 @@ test.describe('NOISE3D v26.1-16.0 - UV & Mesh Edit', () => {
   test('UV unwrap mode selector has four modes', async ({ page }) => {
     await page.goto('/?ws=modeling');
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
-    const select = page.locator('.mesh-edit-panel select');
-    const options = select.locator('option');
+    const dropdown = page.locator('.mesh-edit-panel .w-dropdown-btn');
+    await dropdown.click();
+    const options = page.locator('.mesh-edit-panel .w-dropdown-item');
     await expect(options).toHaveCount(4);
+    await page.keyboard.press('Escape');
   });
 
   test('unwrap UVs button works', async ({ page }) => {

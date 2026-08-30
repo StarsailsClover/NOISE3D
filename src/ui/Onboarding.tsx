@@ -35,8 +35,8 @@ export function Onboarding() {
 
   const s = STEPS[step];
   return (
-    <div className="tour-overlay" data-step={step}>
-      <div className="tour-card">
+    <div className="tour-overlay" data-step={step} onClick={finish}>
+      <div className="tour-card" onClick={(e) => e.stopPropagation()}>
         <div className="tour-step-count">Step {step + 1} / {STEPS.length}</div>
         <div className="tour-title">{s.title}</div>
         <div className="tour-text">{s.text}</div>

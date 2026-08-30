@@ -2,6 +2,33 @@
 
 <!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
+## v26.1-27.0 (2026-08-25) - LTS Release
+
+### Added
+- Custom widget library `src/ui/widgets.tsx` -- no native H5 form controls
+  remain in the editor panels (per user feedback to match Blender-grade
+  widget quality):
+  - `Slider`: entire track draggable, filled value bar, hover `<` `>`
+    steppers, Shift precision / Ctrl snap, arrow-key nudging, ARIA slider
+  - `Dropdown`: styled popup listbox replacing every native `<select>`;
+    Escape/click-out close, ARIA listbox
+  - `Toggle`: Blender-style check square with ARIA checkbox semantics
+  - `ColorSwatch`: styled swatch button delegating to a hidden native
+    color dialog (OS-strength picker without in-page chrome)
+- Widget adoption across all panels: Inspector (metallic/roughness/
+  emissive/double-sided/UV/component properties), Light (color/intensity/
+  range/cones), Environment (sky dropdown/sky colors/fog toggle+density/
+  brush strength), MeshEdit (UV dropdown/extrude/bevel), Particle (4
+  sliders), RenderSettings (exposure/bloom x2), Timeline (time scrubber)
+- Legacy native-range CSS removed
+
+### Changed
+- Component property booleans/numbers now render Toggle/NumberField
+- v9/v14/v15/v17/v18 tests migrated to widget selectors
+
+### Tested
+- Full suite: 359 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-26.0 (2026-08-24) - LTS Release
 
 > Pre-release note: this Alpha-stage increment was validated with a full

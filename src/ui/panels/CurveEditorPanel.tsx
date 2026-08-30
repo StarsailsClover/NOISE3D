@@ -1,5 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
+import { Dropdown } from '../widgets';
 import {
   createClipV2,
   ensureTrack,
@@ -19,6 +20,7 @@ const INTERP_MODES: InterpolationMode[] = ['linear', 'bezier', 'step', 'ease-in'
 export function CurveEditorPanel() {
   const [clips, setClips] = useState<AnimationClipV2[]>([]);
   const [activeClipId, setActiveClipId] = useState<number | null>(null);
+  const [interpMode, setInterpMode] = useState<InterpolationMode>('bezier');
   const [skeleton, setSkeleton] = useState<Skeleton | null>(null);
   const [ikTarget, setIkTarget] = useState({ x: 0.5, y: 0.5 });
   const [ikResult, setIkResult] = useState<string>('');
@@ -122,15 +124,12 @@ export function CurveEditorPanel() {
         {activeClip && activeClip.tracks.length > 0 && (
           <div className="inspector-section">
             <label className="inspector-label">Interpolation</label>
-            <select
+            <Dropdown
               className="env-select"
-              defaultValue="bezier"
-              onChange={(e) => changeInterpolation(e.target.value as InterpolationMode)}
-            >
-              {INTERP_MODES.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              value={interpMode}
+              options={INTERP_MODES.map((m) => ({ value: m as string, label: m }))}
+              onChange={(v) => { setInterpMode(v as InterpolationMode); changeInterpolation(v as InterpolationMode); }}
+            />
           </div>
         )}
 
@@ -180,3 +179,4 @@ export function CurveEditorPanel() {
 }
 
 void Color;
+
