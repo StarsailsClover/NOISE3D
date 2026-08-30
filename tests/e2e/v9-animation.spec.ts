@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('NOISE3D v9 - Animation, Particles, 2D Mode', () => {
   test('timeline panel is visible', async ({ page }) => {
@@ -107,15 +107,15 @@ test.describe('NOISE3D v9 - Animation, Particles, 2D Mode', () => {
   });
 
   test('timeline time display updates on slider change', async ({ page }) => {
+    // Dismiss the first-run tour so bottom-center controls are clickable
+    await page.addInitScript(() => localStorage.setItem('noise3d:tour-done', '1'));
     await page.goto('/?ws=animation');
     await page.locator('.timeline-panel .panel-btn:has-text("Clip")').click();
     const slider = page.locator('.timeline-slider');
-    await slider.evaluate((el: HTMLInputElement) => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-      setter?.call(el, '2.5');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('.timeline-time')).toContainText('2.50');
+    const box = await slider.boundingBox();
+    if (!box) throw new Error('no slider box');
+    await slider.click({ position: { x: box.width * 0.5, y: box.height / 2 } });
+    await expect(page.locator('.timeline-time')).toContainText('2.5');
   });
 
   test('multiple clips can be created', async ({ page }) => {
@@ -125,4 +125,6 @@ test.describe('NOISE3D v9 - Animation, Particles, 2D Mode', () => {
     await expect(page.locator('.clip-btn')).toHaveCount(2);
   });
 });
+
+
 

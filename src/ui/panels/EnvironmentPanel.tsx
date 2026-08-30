@@ -1,4 +1,5 @@
-import { useEditorStore } from '@core/EditorStore';
+﻿import { useEditorStore } from '@core/EditorStore';
+import { Slider, Dropdown, Toggle, ColorSwatch } from '../widgets';
 
 export function EnvironmentPanel() {
   const terrain = useEditorStore((s) => s.terrain);
@@ -36,21 +37,18 @@ export function EnvironmentPanel() {
             </div>
 
             <label className="inspector-sublabel">Brush Strength</label>
-            <div className="inspector-slider-row">
-              <input
-                className="inspector-slider"
-                type="range"
-                min="0.1"
-                max="2"
-                step="0.1"
-                value={terrain.brushStrength}
-                onChange={(e) => {
-                  const t = { ...terrain, brushStrength: parseFloat(e.target.value) };
-                  useEditorStore.setState({ terrain: t });
-                }}
-              />
-              <span className="inspector-slider-value">{terrain.brushStrength.toFixed(1)}</span>
-            </div>
+            <Slider
+              className="inspector-slider"
+              value={terrain.brushStrength}
+              min={0.1}
+              max={2}
+              step={0.1}
+              format={(v) => v.toFixed(1)}
+              onChange={(v) => {
+                const t = { ...terrain, brushStrength: v };
+                useEditorStore.setState({ terrain: t });
+              }}
+            />
           </div>
         ) : (
           <div className="env-empty">No terrain in scene</div>
@@ -58,57 +56,50 @@ export function EnvironmentPanel() {
 
         <div className="inspector-section">
           <label className="inspector-label">Sky</label>
-          <select
+          <Dropdown
             className="env-select"
             value={environment.skyType}
-            onChange={(e) => updateEnvironment({ skyType: e.target.value as any })}
-          >
-            <option value="gradient">Gradient</option>
-            <option value="solid">Solid</option>
-            <option value="procedural">Procedural</option>
-          </select>
+            options={[
+              { value: 'gradient', label: 'Gradient' },
+              { value: 'solid', label: 'Solid' },
+              { value: 'procedural', label: 'Procedural' },
+            ]}
+            onChange={(v) => updateEnvironment({ skyType: v })}
+          />
 
           <label className="inspector-sublabel">Top Color</label>
-          <input
+          <ColorSwatch
             className="inspector-color"
-            type="color"
             value={rgbToHex(environment.skyTopColor)}
-            onChange={(e) => updateEnvironment({ skyTopColor: hexToRgb(e.target.value) })}
+            onChange={(hex) => updateEnvironment({ skyTopColor: hexToRgb(hex) })}
           />
 
           <label className="inspector-sublabel">Bottom Color</label>
-          <input
+          <ColorSwatch
             className="inspector-color"
-            type="color"
             value={rgbToHex(environment.skyBottomColor)}
-            onChange={(e) => updateEnvironment({ skyBottomColor: hexToRgb(e.target.value) })}
+            onChange={(hex) => updateEnvironment({ skyBottomColor: hexToRgb(hex) })}
           />
         </div>
 
         <div className="inspector-section">
           <label className="inspector-label">Fog</label>
-          <label className="inspector-checkbox-row">
-            <input
-              type="checkbox"
-              checked={environment.fogEnabled}
-              onChange={(e) => updateEnvironment({ fogEnabled: e.target.checked })}
-            />
-            <span className="inspector-checkbox-label">Enable Fog</span>
-          </label>
+          <Toggle
+            checked={environment.fogEnabled}
+            label="Enable Fog"
+            onChange={(v) => updateEnvironment({ fogEnabled: v })}
+          />
 
           <label className="inspector-sublabel">Density</label>
-          <div className="inspector-slider-row">
-            <input
-              className="inspector-slider"
-              type="range"
-              min="0"
-              max="0.2"
-              step="0.005"
-              value={environment.fogDensity}
-              onChange={(e) => updateEnvironment({ fogDensity: parseFloat(e.target.value) })}
-            />
-            <span className="inspector-slider-value">{environment.fogDensity.toFixed(3)}</span>
-          </div>
+          <Slider
+            className="inspector-slider"
+            value={environment.fogDensity}
+            min={0}
+            max={0.2}
+            step={0.005}
+            format={(v) => v.toFixed(3)}
+            onChange={(v) => updateEnvironment({ fogDensity: v })}
+          />
         </div>
       </div>
     </div>
@@ -132,3 +123,4 @@ function hexToRgb(hex: string): [number, number, number] {
     parseInt(m[3], 16) / 255,
   ];
 }
+

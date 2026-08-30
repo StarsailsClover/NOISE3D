@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
   test('physics toggle button exists', async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     await page.waitForTimeout(200);
 
     const gravityProp = page.locator('.component-property:has-text("Use Gravity")');
-    await expect(gravityProp.locator('input[type="checkbox"]')).toBeChecked();
+    await expect(gravityProp.locator('.w-toggle')).toHaveAttribute('aria-checked', 'true');
   });
 
   test('Rigidbody mass defaults to 1', async ({ page }) => {
@@ -175,7 +175,8 @@ test.describe('NOISE3D v26.1-13.0 - Physics Engine', () => {
     await page.waitForTimeout(200);
 
     const massProp = page.locator('.component-property:has-text("Mass")');
-    await expect(massProp.locator('input[type="number"]')).toHaveValue('1');
+    await expect(massProp.locator('.numfield-display')).toHaveValue('1.00');
   });
 });
+
 

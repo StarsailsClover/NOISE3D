@@ -1,4 +1,5 @@
-import { useEditorStore } from '@core/EditorStore';
+﻿import { useEditorStore } from '@core/EditorStore';
+import { Slider } from '../widgets';
 
 export function ParticlePanel() {
   const emitters = useEditorStore((s) => s.particleEmitters);
@@ -31,68 +32,46 @@ export function ParticlePanel() {
               </div>
               <div className="inspector-section">
                 <label className="inspector-sublabel">Emission Rate</label>
-                <div className="inspector-slider-row">
-                  <input
-                    className="inspector-slider"
-                    type="range"
-                    min="1"
-                    max="100"
-                    step="1"
-                    value={emitter.emissionRate}
-                    onChange={(e) =>
-                      updateParticleEmitter(emitter.id, { emissionRate: parseInt(e.target.value) })
-                    }
-                  />
-                  <span className="inspector-slider-value">{emitter.emissionRate}/s</span>
-                </div>
+                <Slider
+                  className="inspector-slider"
+                  value={emitter.emissionRate}
+                  min={1}
+                  max={100}
+                  step={1}
+                  format={(v) => `${v.toFixed(0)}/s`}
+                  onChange={(v) => updateParticleEmitter(emitter.id, { emissionRate: v })}
+                />
 
                 <label className="inspector-sublabel">Lifetime</label>
-                <div className="inspector-slider-row">
-                  <input
-                    className="inspector-slider"
-                    type="range"
-                    min="0.5"
-                    max="10"
-                    step="0.1"
-                    value={emitter.particleLifetime}
-                    onChange={(e) =>
-                      updateParticleEmitter(emitter.id, { particleLifetime: parseFloat(e.target.value) })
-                    }
-                  />
-                  <span className="inspector-slider-value">{emitter.particleLifetime.toFixed(1)}s</span>
-                </div>
+                <Slider
+                  className="inspector-slider"
+                  value={emitter.particleLifetime}
+                  min={0.5}
+                  max={10}
+                  step={0.1}
+                  format={(v) => `${v.toFixed(1)}s`}
+                  onChange={(v) => updateParticleEmitter(emitter.id, { particleLifetime: v })}
+                />
 
                 <label className="inspector-sublabel">Start Speed</label>
-                <div className="inspector-slider-row">
-                  <input
-                    className="inspector-slider"
-                    type="range"
-                    min="0.5"
-                    max="20"
-                    step="0.5"
-                    value={emitter.startSpeed}
-                    onChange={(e) =>
-                      updateParticleEmitter(emitter.id, { startSpeed: parseFloat(e.target.value) })
-                    }
-                  />
-                  <span className="inspector-slider-value">{emitter.startSpeed.toFixed(1)}</span>
-                </div>
+                <Slider
+                  className="inspector-slider"
+                  value={emitter.startSpeed}
+                  min={0.5}
+                  max={20}
+                  step={0.5}
+                  onChange={(v) => updateParticleEmitter(emitter.id, { startSpeed: v })}
+                />
 
                 <label className="inspector-sublabel">Gravity</label>
-                <div className="inspector-slider-row">
-                  <input
-                    className="inspector-slider"
-                    type="range"
-                    min="-20"
-                    max="0"
-                    step="0.5"
-                    value={emitter.gravity}
-                    onChange={(e) =>
-                      updateParticleEmitter(emitter.id, { gravity: parseFloat(e.target.value) })
-                    }
-                  />
-                  <span className="inspector-slider-value">{emitter.gravity.toFixed(1)}</span>
-                </div>
+                <Slider
+                  className="inspector-slider"
+                  value={emitter.gravity}
+                  min={-20}
+                  max={0}
+                  step={0.5}
+                  onChange={(v) => updateParticleEmitter(emitter.id, { gravity: v })}
+                />
               </div>
             </div>
           ))
@@ -101,3 +80,4 @@ export function ParticlePanel() {
     </div>
   );
 }
+

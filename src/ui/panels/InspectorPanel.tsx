@@ -3,6 +3,7 @@ import { useEditorStore } from '@core/EditorStore';
 import { Vec3, Color } from '@math/Vec';
 import { MATERIAL_PRESETS } from '@renderer/Material';
 import { NumberField } from '../fields/NumberField';
+import { Slider, Toggle, ColorSwatch } from '../widgets';
 import { BUILTIN_COMPONENT_TYPES, getComponentDisplayName, getComponentPropertyLabels, type ComponentData } from '@scene/Component';
 
 export function InspectorPanel() {
@@ -122,84 +123,53 @@ export function InspectorPanel() {
               <label className="inspector-label">Surface</label>
 
               <label className="inspector-sublabel">Base Color</label>
-              <input
+              <ColorSwatch
                 className="inspector-color"
-                type="color"
                 value={material.baseColor.toHex()}
-                onChange={(e) => {
-                  const newColor = Color.fromString(e.target.value);
-                  setMaterial(node.id, { baseColor: newColor });
-                }}
+                onChange={(hex) => setMaterial(node.id, { baseColor: Color.fromString(hex) })}
               />
 
               <label className="inspector-sublabel">Metallic</label>
-              <div className="inspector-slider-row">
-                <input
-                  className="inspector-slider"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={material.metallic}
-                  onChange={(e) =>
-                    setMaterial(node.id, { metallic: parseFloat(e.target.value) })
-                  }
-                />
-                <span className="inspector-slider-value">
-                  {material.metallic.toFixed(2)}
-                </span>
-              </div>
+              <Slider
+                className="inspector-slider"
+                value={material.metallic}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => setMaterial(node.id, { metallic: v })}
+              />
 
               <label className="inspector-sublabel">Roughness</label>
-              <div className="inspector-slider-row">
-                <input
-                  className="inspector-slider"
-                  type="range"
-                  min="0.05"
-                  max="1"
-                  step="0.01"
-                  value={material.roughness}
-                  onChange={(e) =>
-                    setMaterial(node.id, { roughness: parseFloat(e.target.value) })
-                  }
-                />
-                <span className="inspector-slider-value">
-                  {material.roughness.toFixed(2)}
-                </span>
-              </div>
+              <Slider
+                className="inspector-slider"
+                value={material.roughness}
+                min={0.05}
+                max={1}
+                step={0.01}
+                onChange={(v) => setMaterial(node.id, { roughness: v })}
+              />
             </div>
 
             <div className="inspector-section">
               <label className="inspector-label">Emission</label>
 
               <label className="inspector-sublabel">Emissive Color</label>
-              <input
+              <ColorSwatch
                 className="inspector-color"
-                type="color"
                 value={material.emissive.toHex()}
-                onChange={(e) => {
-                  const newColor = Color.fromString(e.target.value);
-                  setMaterial(node.id, { emissive: newColor });
-                }}
+                onChange={(hex) => setMaterial(node.id, { emissive: Color.fromString(hex) })}
               />
 
               <label className="inspector-sublabel">Emissive Intensity</label>
-              <div className="inspector-slider-row">
-                <input
-                  className="inspector-slider"
-                  type="range"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  value={material.emissiveIntensity}
-                  onChange={(e) =>
-                    setMaterial(node.id, { emissiveIntensity: parseFloat(e.target.value) })
-                  }
-                />
-                <span className="inspector-slider-value">
-                  {material.emissiveIntensity.toFixed(1)}
-                </span>
-              </div>
+              <Slider
+                className="inspector-slider"
+                value={material.emissiveIntensity}
+                min={0}
+                max={5}
+                step={0.1}
+                format={(v) => v.toFixed(1)}
+                onChange={(v) => setMaterial(node.id, { emissiveIntensity: v })}
+              />
             </div>
 
             <div className="inspector-section">
@@ -250,16 +220,11 @@ export function InspectorPanel() {
 
             <div className="inspector-section">
               <label className="inspector-label">Render Options</label>
-              <label className="inspector-checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={material.doubleSided}
-                  onChange={(e) =>
-                    setMaterial(node.id, { doubleSided: e.target.checked })
-                  }
-                />
-                <span className="inspector-checkbox-label">Double Sided</span>
-              </label>
+              <Toggle
+                checked={material.doubleSided}
+                label="Double Sided"
+                onChange={(v) => setMaterial(node.id, { doubleSided: v })}
+              />
             </div>
           </>
         )}
@@ -338,21 +303,17 @@ function ComponentEditor({ nodeId, component, onRemove, onUpdate }: {
           <div key={key} className="component-property">
             <label className="inspector-sublabel">{labels[key] ?? key}</label>
             {typeof value === 'boolean' ? (
-              <label className="inspector-checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={value}
-                  onChange={(e) => onUpdate(nodeId, component.id, { [key]: e.target.checked })}
-                />
-                <span className="inspector-checkbox-label">{value ? 'Yes' : 'No'}</span>
-              </label>
+              <Toggle
+                checked={value}
+                label={value ? 'Yes' : 'No'}
+                onChange={(v) => onUpdate(nodeId, component.id, { [key]: v })}
+              />
             ) : typeof value === 'number' ? (
-              <input
+              <NumberField
                 className="inspector-number"
-                type="number"
-                step="0.1"
                 value={value}
-                onChange={(e) => onUpdate(nodeId, component.id, { [key]: parseFloat(e.target.value) || 0 })}
+                step={0.1}
+                onCommit={(v) => onUpdate(nodeId, component.id, { [key]: v })}
               />
             ) : typeof value === 'string' && value.length > 30 ? (
               <textarea
@@ -417,3 +378,4 @@ function Vec3Row({
     </div>
   );
 }
+

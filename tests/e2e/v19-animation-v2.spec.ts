@@ -48,14 +48,16 @@ test.describe('NOISE3D v26.1-17.0 - Animation V2', () => {
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     await page.locator('.curve-editor-panel .panel-btn:has-text("Clip")').click();
     await page.locator('.env-btn:has-text("Pos")').click();
-    const options = page.locator('.curve-editor-panel select option');
-    const texts = await options.allTextContents();
+    await page.locator('.curve-editor-panel .w-dropdown-btn').click();
+    const items = page.locator('.curve-editor-panel .w-dropdown-item');
+    const texts = await items.allTextContents();
     expect(texts).toContain('bezier');
     expect(texts).toContain('ease-in');
     expect(texts).toContain('ease-out');
     expect(texts).toContain('ease-in-out');
     expect(texts).toContain('linear');
     expect(texts).toContain('step');
+    await page.keyboard.press('Escape');
   });
 
   test('changing interpolation logs', async ({ page }) => {
@@ -63,7 +65,8 @@ test.describe('NOISE3D v26.1-17.0 - Animation V2', () => {
     await page.locator('.viewport-toolbar button:has-text("Cube")').click();
     await page.locator('.curve-editor-panel .panel-btn:has-text("Clip")').click();
     await page.locator('.env-btn:has-text("Pos")').click();
-    await page.locator('.curve-editor-panel select').selectOption('ease-in-out');
+    await page.locator('.curve-editor-panel .w-dropdown-btn').click();
+    await page.locator('.curve-editor-panel .w-dropdown-item:has-text("ease-in-out")').click();
     await expect(page.locator('.console-message').last()).toContainText('ease-in-out');
   });
 

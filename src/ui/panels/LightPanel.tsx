@@ -1,6 +1,7 @@
 ﻿import { useEditorStore } from '@core/EditorStore';
 import { NumberField } from '../fields/NumberField';
 import { Vec3 } from '@math/Vec';
+import { Slider, ColorSwatch } from '../widgets';
 
 export function LightPanel() {
   const lights = useEditorStore((s) => s.scene.lights);
@@ -141,12 +142,11 @@ export function LightPanel() {
 
               <div className="inspector-section">
                 <label className="inspector-label">Color</label>
-                <input
+                <ColorSwatch
                   className="inspector-color"
-                  type="color"
                   value={light.color.toHex()}
-                  onChange={(e) => {
-                    const m = e.target.value.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i);
+                  onChange={(hex) => {
+                    const m = hex.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i);
                     if (m) {
                       updateLight(light.id, {
                         color: {
@@ -166,35 +166,29 @@ export function LightPanel() {
 
               <div className="inspector-section">
                 <label className="inspector-label">Intensity</label>
-                <div className="inspector-slider-row">
-                  <input
-                    className="inspector-slider"
-                    type="range"
-                    min="0"
-                    max="50"
-                    step="0.5"
-                    value={light.intensity}
-                    onChange={(e) => updateLight(light.id, { intensity: parseFloat(e.target.value) })}
-                  />
-                  <span className="inspector-slider-value">{light.intensity.toFixed(1)}</span>
-                </div>
+                <Slider
+                  className="inspector-slider"
+                  value={light.intensity}
+                  min={0}
+                  max={50}
+                  step={0.5}
+                  format={(v) => v.toFixed(1)}
+                  onChange={(v) => updateLight(light.id, { intensity: v })}
+                />
               </div>
 
               {light.type !== 'directional' && (
                 <div className="inspector-section">
                   <label className="inspector-label">Range</label>
-                  <div className="inspector-slider-row">
-                    <input
-                      className="inspector-slider"
-                      type="range"
-                      min="1"
-                      max="100"
-                      step="1"
-                      value={light.range}
-                      onChange={(e) => updateLight(light.id, { range: parseFloat(e.target.value) })}
-                    />
-                    <span className="inspector-slider-value">{light.range.toFixed(0)}</span>
-                  </div>
+                  <Slider
+                    className="inspector-slider"
+                    value={light.range}
+                    min={1}
+                    max={100}
+                    step={1}
+                    format={(v) => v.toFixed(0)}
+                    onChange={(v) => updateLight(light.id, { range: v })}
+                  />
                 </div>
               )}
 
@@ -202,33 +196,27 @@ export function LightPanel() {
                 <>
                   <div className="inspector-section">
                     <label className="inspector-label">Inner Cone</label>
-                    <div className="inspector-slider-row">
-                      <input
-                        className="inspector-slider"
-                        type="range"
-                        min="0"
-                        max={Math.PI / 2}
-                        step="0.01"
-                        value={light.innerConeAngle}
-                        onChange={(e) => updateLight(light.id, { innerConeAngle: parseFloat(e.target.value) })}
-                      />
-                      <span className="inspector-slider-value">{(light.innerConeAngle * 180 / Math.PI).toFixed(0)}deg</span>
-                    </div>
+                    <Slider
+                      className="inspector-slider"
+                      value={light.innerConeAngle}
+                      min={0}
+                      max={Math.PI / 2}
+                      step={0.01}
+                      format={(v) => `${(v * 180 / Math.PI).toFixed(0)}deg`}
+                      onChange={(v) => updateLight(light.id, { innerConeAngle: v })}
+                    />
                   </div>
                   <div className="inspector-section">
                     <label className="inspector-label">Outer Cone</label>
-                    <div className="inspector-slider-row">
-                      <input
-                        className="inspector-slider"
-                        type="range"
-                        min="0"
-                        max={Math.PI / 2}
-                        step="0.01"
-                        value={light.outerConeAngle}
-                        onChange={(e) => updateLight(light.id, { outerConeAngle: parseFloat(e.target.value) })}
-                      />
-                      <span className="inspector-slider-value">{(light.outerConeAngle * 180 / Math.PI).toFixed(0)}deg</span>
-                    </div>
+                    <Slider
+                      className="inspector-slider"
+                      value={light.outerConeAngle}
+                      min={0}
+                      max={Math.PI / 2}
+                      step={0.01}
+                      format={(v) => `${(v * 180 / Math.PI).toFixed(0)}deg`}
+                      onChange={(v) => updateLight(light.id, { outerConeAngle: v })}
+                    />
                   </div>
                 </>
               )}
@@ -239,4 +227,5 @@ export function LightPanel() {
     </div>
   );
 }
+
 

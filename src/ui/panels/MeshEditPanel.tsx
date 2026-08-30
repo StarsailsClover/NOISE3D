@@ -1,6 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
 import { UVUnwrapper, MeshOperations, type UnwrapMode } from '@renderer/MeshOps';
+import { Slider, Dropdown } from '../widgets';
 
 export function MeshEditPanel() {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
@@ -58,16 +59,17 @@ export function MeshEditPanel() {
 
         <div className="inspector-section">
           <label className="inspector-label">UV Unwrap</label>
-          <select
+          <Dropdown
             className="env-select"
             value={unwrapMode}
-            onChange={(e) => setUnwrapMode(e.target.value as UnwrapMode)}
-          >
-            <option value="planar">Planar</option>
-            <option value="box">Box</option>
-            <option value="spherical">Spherical</option>
-            <option value="cylindrical">Cylindrical</option>
-          </select>
+            options={[
+              { value: 'planar', label: 'Planar' },
+              { value: 'box', label: 'Box' },
+              { value: 'spherical', label: 'Spherical' },
+              { value: 'cylindrical', label: 'Cylindrical' },
+            ]}
+            onChange={(v) => setUnwrapMode(v as UnwrapMode)}
+          />
           <button className="mesh-op-btn" onClick={unwrapUV}>Unwrap UVs</button>
         </div>
 
@@ -77,33 +79,25 @@ export function MeshEditPanel() {
           <button className="mesh-op-btn" onClick={subdivide}>Subdivide</button>
 
           <label className="inspector-sublabel">Extrude Distance</label>
-          <div className="inspector-slider-row">
-            <input
-              className="inspector-slider"
-              type="range"
-              min="-1"
-              max="1"
-              step="0.05"
-              value={extrudeDist}
-              onChange={(e) => setExtrudeDist(parseFloat(e.target.value))}
-            />
-            <span className="inspector-slider-value">{extrudeDist.toFixed(2)}</span>
-          </div>
+          <Slider
+            className="inspector-slider"
+            value={extrudeDist}
+            min={-1}
+            max={1}
+            step={0.05}
+            onChange={(v) => setExtrudeDist(v)}
+          />
           <button className="mesh-op-btn" onClick={extrude}>Extrude Faces</button>
 
           <label className="inspector-sublabel">Bevel Amount</label>
-          <div className="inspector-slider-row">
-            <input
-              className="inspector-slider"
-              type="range"
-              min="0"
-              max="0.5"
-              step="0.01"
-              value={bevelAmount}
-              onChange={(e) => setBevelAmount(parseFloat(e.target.value))}
-            />
-            <span className="inspector-slider-value">{bevelAmount.toFixed(2)}</span>
-          </div>
+          <Slider
+            className="inspector-slider"
+            value={bevelAmount}
+            min={0}
+            max={0.5}
+            step={0.01}
+            onChange={(v) => setBevelAmount(v)}
+          />
           <button className="mesh-op-btn" onClick={bevel}>Bevel Edges</button>
         </div>
 
@@ -119,3 +113,4 @@ export function MeshEditPanel() {
     </div>
   );
 }
+
