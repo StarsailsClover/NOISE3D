@@ -1,5 +1,36 @@
 # Version History
 
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
+
+## v26.1-26.0 (2026-08-24) - LTS Release
+
+> Pre-release note: this Alpha-stage increment was validated with a full
+> Playwright regression round before promotion; minor instabilities may
+> remain in WebGPU paths (fallback to WebGL2 is automatic).
+
+### Added
+- Command palette (Ctrl+K): fuzzy-ranked commands with shortcut badges,
+  keyboard navigation (arrows + Enter), click-away/Escape close, and a
+  persisted Recent list (last 5, localStorage)
+- Command registry: primitives, view presets, projection toggle, frame
+  selected/all, gizmo modes, save/load/new/download, OBJ/JSON/PNG export,
+  grid/2D-3D/physics/physics-debug toggles, cheat sheet, all five
+  workspaces, and installed plugin tools
+- Hierarchy live search filter (matches node or any descendant; clear
+  button)
+- Palette integrated into the unified Escape chain (menu > cheat sheet >
+  palette > cancel gizmo > deselect)
+
+### Tested
+- 8 new E2E tests (open/fuzzy-run/badges/escape/recent/workspaces/
+  plugin tools/search)
+- Full suite: 360 E2E passed / 0 failed + 6 unit passed
+
+### Process (BC Development Process compliance)
+- Feature branch `feat/v26.1-26.0-command-palette` (no direct main work)
+- SSH-signed commits (commit.gpgsign=true, gpg.format=ssh)
+- Pre-implementation audit devlog: `.devlogs/2026-08-24-v26.1-26.0.md`
+
 ## v26.1-25.0 (2026-08-24) - LTS Release
 
 ### Added

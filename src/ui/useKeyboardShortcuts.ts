@@ -27,7 +27,15 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Unified Escape chain: close menu > close help > cancel gizmo > deselect
+      // Ctrl+K opens the command palette
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        ov.setPaletteOpen(!ov.paletteOpen);
+        return;
+      }
+
+      // Unified Escape chain: close menu > close help > close palette >
+      // cancel gizmo > deselect
       if (e.key === 'Escape') {
         e.preventDefault();
         if (ov.menu?.open) {
@@ -36,6 +44,10 @@ export function useKeyboardShortcuts() {
         }
         if (ov.shortcutHelpOpen) {
           ov.setShortcutHelp(false);
+          return;
+        }
+        if (ov.paletteOpen) {
+          ov.setPaletteOpen(false);
           return;
         }
         const g = (window as any).__noise3d_gizmo;

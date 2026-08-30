@@ -41,9 +41,40 @@ Versions 1.0.0 through 9.0.0 used a simple incrementing scheme. These tags are p
 
 ## Branch Strategy
 
+<!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
+
+Aligned with the BC Development Process (Git Control):
+
 - `main` -- Always stable, LTS releases tagged from here
-- `dev` -- Development branch for ongoing work
-- Feature branches: `feat/webgpu-backend`, `feat/code-editor`, etc.
+- Each increment (a "Major" in BC terms) is developed on an independent
+  feature branch, e.g. `feat/v26.1-26.0-command-palette`, and merged into
+  `main` at release time with a merge commit
+- All commits are SSH-signed (`commit.gpgsign=true`, `gpg.format=ssh`)
+- English commit/merge/PR messages
+- `.gitignore` keeps the repository to essential sources, docs, and scripts
+
+### BC Version Control Mapping
+
+The BC scheme `v{Year}.{Major}-Alpha {N}` (ten Alphas per Major; Alpha 10
+is the LTS release, normally hidden from display) maps onto this repo's
+calendar-semantic tags as follows:
+
+| BC concept | This repo |
+|------------|-----------|
+| Major version | `v26.1` (year 26, Major 1) |
+| Alpha 1..9 | `v26.1-XX.0.RC` pre-releases |
+| Alpha 10 / Major release | `v26.1-XX.0.LTS` releases |
+| Sub-Major (exception) | `v26.1-20.1` style hotfixes |
+| Pre-Release publication | RC tag + changelog entry with instability disclaimer |
+| Release publication | LTS tag after full regression rounds |
+
+Per-Major themes are tracked in `docs/ROADMAP.md` and
+`docs/ROADMAP-UX.md`; robustness work and bug fixes ride along with each
+increment. A 30-minute simulated-usage and abuse test is performed
+against the previous increment before planning the next one (Playwright
+full-suite rounds serve as this assessment).
+
+## Commit Conventions
 
 ## Commit Conventions
 
