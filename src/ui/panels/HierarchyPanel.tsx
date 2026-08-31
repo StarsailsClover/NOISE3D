@@ -121,6 +121,8 @@ function HierarchyItem({
   const isDragOver = dragOverId === node.id;
   const isDragging = dragId === node.id;
   const zoneHere = isDragOver ? dropZone : null;
+  const renameNode = useEditorStore((s) => s.renameNode);
+  const [renaming, setRenaming] = useState(false);
 
   // Live search filter: show node if it or any descendant matches
   const matchesHere = !filter || node.name.toLowerCase().includes(filter);
@@ -231,7 +233,32 @@ function HierarchyItem({
         <span className="hierarchy-icon">
           {children.length > 0 ? '\u25BE' : '\u2022'}
         </span>
-        <span className="hierarchy-label">{node.name}</span>
+        {renaming ? (
+          <input
+            className="hierarchy-rename-input"
+            defaultValue={node.name}
+            autoFocus
+            onFocus={(e) => e.target.select()}
+            onBlur={() => setRenaming(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                renameNode(node.id, (e.target as HTMLInputElement).value);
+                setRenaming(false);
+              } else if (e.key === 'Escape') {
+                setRenaming(false);
+              }
+              e.stopPropagation();
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className="hierarchy-label"
+            onDoubleClick={() => !isRoot && setRenaming(true)}
+          >
+            {node.name}
+          </span>
+        )}
         {!isRoot && (
           <div className="hierarchy-actions">
             <button

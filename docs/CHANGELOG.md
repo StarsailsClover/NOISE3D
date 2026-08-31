@@ -2,6 +2,29 @@
 
 <!-- GitHub@NDBlockConnect | BlockConnect@StarsailsClover -->
 
+## v26.1-28.0 (2026-08-25) - LTS Release
+
+### Added
+- Navigation axis gizmo (top-right of viewport): six clickable axis balls
+  (±X/±Y/±Z) with stalks, depth-sorted rendering, and orbit-on-drag;
+  click snaps to the axis view (Blender/Unity convention)
+- Live transform readout during gizmo drag: status bar shows
+  `Dx: 1.20 Dy: 0.00 Dz: -0.50` (translate), `Scale: x/y/z` (scale),
+  `D-angle: 45.0°` (rotate) -- Blender header behavior
+- Mid-drag axis locking: pressing X/Y/Z during a gizmo drag constrains
+  the transform to that axis (no pre-selection needed)
+- Mid-drag precision: Shift = 0.1x delta rate
+- Mid-drag numeric entry: typing digits/./- accumulates an exact value
+  for the constrained axis; applied live per keystroke (Blender modal
+  operator behavior)
+- Hierarchy double-click inline rename (Outliner convention)
+- Gizmo-drag keyboard isolation: all shortcuts suppressed during drag
+  (prevents '1'/'2'/'3' from spawning primitives mid-transform)
+
+### Tested
+- 7 new Blender-fidelity E2E tests
+- Full suite: 367 E2E passed / 0 failed + 6 unit passed
+
 ## v26.1-27.0 (2026-08-25) - LTS Release
 
 ### Added

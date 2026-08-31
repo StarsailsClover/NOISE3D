@@ -1026,6 +1026,27 @@
   border-color: var(--accent-blue);
 }
 
+/* ---- Navigation axis gizmo ---- */
+.nav-gizmo {
+  position: absolute;
+  top: 48px;
+  right: 10px;
+  z-index: 20;
+  user-select: none;
+}
+
+.nav-ball:hover circle {
+  stroke: #fff;
+}
+
+/* ---- Transform readout (Blender header behavior) ---- */
+.transform-readout {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #9fdc9f;
+  white-space: nowrap;
+}
+
 .inspector-number:focus {
   outline: none;
   border-color: var(--accent-blue);
@@ -2239,3 +2260,14 @@
   background: rgba(74, 144, 217, 0.4) !important;
 }
 
+.hierarchy-rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 4px;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  border: 1px solid var(--accent-blue);
+  border-radius: 2px;
+  font-size: 12px;
+  outline: none;
+}

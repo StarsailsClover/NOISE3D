@@ -18,12 +18,14 @@ interface OverlayState {
   shortcutHelpOpen: boolean;
   paletteOpen: boolean;
   recentCommands: string[];
+  dragReadout: string | null;
   openMenu: (x: number, y: number, items: ContextMenuItem[]) => void;
   closeMenu: () => void;
   toggleShortcutHelp: () => void;
   setShortcutHelp: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   pushRecentCommand: (id: string) => void;
+  setDragReadout: (s: string | null) => void;
 }
 
 const RECENT_KEY = 'noise3d:recent-commands';
@@ -44,11 +46,13 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   shortcutHelpOpen: false,
   paletteOpen: false,
   recentCommands: loadRecent(),
+  dragReadout: null,
   openMenu: (x, y, items) => set({ menu: { open: true, x, y, items } }),
   closeMenu: () => set({ menu: null }),
   toggleShortcutHelp: () => set({ shortcutHelpOpen: !get().shortcutHelpOpen }),
   setShortcutHelp: (open) => set({ shortcutHelpOpen: open }),
   setPaletteOpen: (open) => set({ paletteOpen: open }),
+  setDragReadout: (s) => set({ dragReadout: s }),
   pushRecentCommand: (id) => {
     const next = [id, ...get().recentCommands.filter((r) => r !== id)].slice(0, MAX_RECENT);
     try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
