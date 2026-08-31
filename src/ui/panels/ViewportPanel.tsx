@@ -12,6 +12,7 @@ import { Ray } from '@engine/Ray';
 import { Vec3 } from '@math/Vec';
 import { Mat4 } from '@math/Mat4';
 import { ViewportCameraControls } from './ViewportCameraControls';
+import { ViewportNavGizmo } from '../ViewportNavGizmo';
 
 export function ViewportPanel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,6 +29,8 @@ export function ViewportPanel() {
   const keysRef = useRef<Set<string>>(new Set());
   const hoverObjRef = useRef<number | null>(null);
   const lastHoverRayRef = useRef(0);
+  const keyAxisRef = useRef<'x' | 'y' | 'z' | null>(null);
+  const numericBufferRef = useRef<string | null>(null);
 
   const scene = useEditorStore((s) => s.scene);
   const showGrid = useEditorStore((s) => s.showGrid);
@@ -92,14 +95,63 @@ export function ViewportPanel() {
     const resizeObserver = new ResizeObserver(resizeCanvas);
     resizeObserver.observe(canvas);
 
-    // Keyboard tracking for flythrough
+    // Keyboard tracking for flythrough + mid-drag axis lock / numeric entry
     const keys = keysRef.current;
+    const applyNumericExact = () => {
+      const buf = numericBufferRef.current;
+      if (buf === null) return;
+      const nv = parseFloat(buf);
+      if (Number.isNaN(nv)) return;
+      const st = useEditorStore.getState();
+      const selId = st.selectedNodeId;
+      if (selId === null || !gizmoRef.current.isDragging) return;
+      const gi = gizmoRef.current;
+      const h = gi.activeHandle;
+      if (!h) return;
+      const axis = keyAxisRef.current ?? h.axis;
+      if (st.gizmoMode === 'translate') {
+        const np = gi.dragStartPos!.clone();
+        np[axis] = nv;
+        st.updateNodeTransform(selId, np);
+      } else if (st.gizmoMode === 'scale') {
+        const ns = gi.dragStartScale!.clone();
+        ns[axis] = Math.max(0.01, nv);
+        st.updateNodeTransform(selId, undefined, undefined, ns);
+      } else {
+        const nr = gi.dragStartRotation!.clone();
+        nr[axis] = nv;
+        st.updateNodeTransform(selId, undefined, nr);
+      }
+      useOverlayStore.setState({ dragReadout: `exact: ${buf} on ${axis.toUpperCase()}` });
+    };
     const onKeyDown = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return;
       keys.add(e.code);
+      // Mid-drag axis lock + numeric entry (Blender modal behavior)
+      if (gizmoDraggingRef.current) {
+        if (['x', 'y', 'z'].includes(e.key.toLowerCase())) {
+          keyAxisRef.current = e.key.toLowerCase() as 'x' | 'y' | 'z';
+          useOverlayStore.setState({ dragReadout: `axis locked: ${e.key.toUpperCase()}` });
+        } else if (/^[0-9.\-]$/.test(e.key)) {
+          numericBufferRef.current = (numericBufferRef.current ?? '') + e.key;
+          useOverlayStore.setState({ dragReadout: `enter: ${numericBufferRef.current}` });
+          applyNumericExact();
+        } else if (e.key === 'Enter') {
+          numericBufferRef.current = null;
+          useOverlayStore.setState({ dragReadout: null });
+          gizmoRef.current.endDrag();
+          gizmoDraggingRef.current = false;
+          setCursor('default');
+        } else if (e.key === 'Backspace') {
+          numericBufferRef.current = (numericBufferRef.current ?? '').slice(0, -1) || null;
+        }
+      }
     };
-    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+    const onKeyUp = (e: KeyboardEvent) => {
+      keys.delete(e.code);
+      if (['x', 'y', 'z'].includes(e.key.toLowerCase())) keyAxisRef.current = null;
+    };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
@@ -274,7 +326,8 @@ export function ViewportPanel() {
       },
     };
     (window as any).__noise3d_gizmo = api;
-    return () => { delete (window as any).__noise3d_gizmo; };
+    (window as any).__noise3d_store = useEditorStore;
+    return () => { delete (window as any).__noise3d_gizmo; delete (window as any).__noise3d_store; };
   }, []);
 
   const handleMouseDown = useCallback(
@@ -372,10 +425,54 @@ export function ViewportPanel() {
         const cam = cameraRef.current;
         const gi = gizmoRef.current;
 
+        // Mid-drag axis lock: X/Y/Z keys override the grabbed axis
+        if (keyAxisRef.current && gi.activeHandle) {
+          gi.activeHandle.axis = keyAxisRef.current;
+          gi.activeHandle.kind = 'axis';
+        }
+
+        // Mid-drag numeric entry: typed value sets the constrained axis exactly
+        if (numericBufferRef.current !== null && gi.activeHandle) {
+          const nv = parseFloat(numericBufferRef.current);
+          if (!Number.isNaN(nv)) {
+            const p0 = gi.dragStartPos!;
+            const r0 = gi.dragStartRotation!;
+            const s0 = gi.dragStartScale!;
+            const axis = gi.activeHandle.axis;
+            if (st.gizmoMode === 'translate') {
+              const np = p0.clone();
+              np[axis] = nv;
+              st.updateNodeTransform(selId, np);
+            } else if (st.gizmoMode === 'scale') {
+              const ns = s0.clone();
+              ns[axis] = Math.max(0.01, nv);
+              st.updateNodeTransform(selId, undefined, undefined, ns);
+            } else {
+              const nr = r0.clone();
+              nr[axis] = nv;
+              st.updateNodeTransform(selId, undefined, nr);
+            }
+            useOverlayStore.setState({
+              dragReadout: `exact: ${numericBufferRef.current} on ${axis.toUpperCase()}`,
+            });
+            lastMouseRef.current = { x, y };
+            return;
+          }
+        }
+
+        // Shift = precision (0.1x delta)
+        const precision = e.shiftKey;
+
         if (st.gizmoMode === 'translate') {
-          const d = gi.getTranslateDelta(x, y, cam, rect.width, rect.height, snap);
+          let d = gi.getTranslateDelta(x, y, cam, rect.width, rect.height, snap);
           const p0 = gi.dragStartPos;
-          if (d && p0) st.updateNodeTransform(selId, Vec3.add(p0, d));
+          if (d && p0) {
+            if (precision) d = Vec3.scale(d, 0.1);
+            st.updateNodeTransform(selId, Vec3.add(p0, d));
+            useOverlayStore.setState({
+              dragReadout: `Dx: ${d.x.toFixed(2)}  Dy: ${d.y.toFixed(2)}  Dz: ${d.z.toFixed(2)}`,
+            });
+          }
         } else if (st.gizmoMode === 'scale') {
           const m = gi.getScaleDelta(x, y, cam, rect.width, rect.height, snap);
           const s0 = gi.dragStartScale;
@@ -385,6 +482,9 @@ export function ViewportPanel() {
               Math.max(0.01, s0.y * m.y),
               Math.max(0.01, s0.z * m.z),
             ));
+            useOverlayStore.setState({
+              dragReadout: `Scale: ${m.x.toFixed(2)} / ${m.y.toFixed(2)} / ${m.z.toFixed(2)}`,
+            });
           }
         } else {
           const ang = gi.getRotateDelta(x, y, cam, rect.width, rect.height, snap);
@@ -392,10 +492,12 @@ export function ViewportPanel() {
           const h = gi.activeHandle;
           if (r0 && h) {
             const rot = r0.clone();
+            const deg = (ang * 180) / Math.PI;
             if (h.axis === 'x') rot.x = r0.x + ang;
             else if (h.axis === 'y') rot.y = r0.y + ang;
             else rot.z = r0.z + ang;
             st.updateNodeTransform(selId, undefined, rot);
+            useOverlayStore.setState({ dragReadout: `D-angle: ${deg.toFixed(1)}°` });
           }
         }
         lastMouseRef.current = { x, y };
@@ -447,6 +549,9 @@ export function ViewportPanel() {
       gizmoRef.current.endDrag();
       gizmoDraggingRef.current = false;
       setCursor('default');
+      numericBufferRef.current = null;
+      keyAxisRef.current = null;
+      useOverlayStore.getState().setDragReadout(null);
     }
     if (flyActiveRef.current) {
       cameraRef.current.endFly();
@@ -621,6 +726,7 @@ export function ViewportPanel() {
       <ViewportToolbar />
       <ViewportGizmoControls />
       <ViewportCameraControls cameraRef={cameraRef} onFrameAll={frameAllNodes} />
+      {!flyActiveRef.current && <ViewportNavGizmo cameraRef={cameraRef} />}
     </div>
   );
 }
@@ -714,6 +820,9 @@ function ViewportGizmoControls() {
     </div>
   );
 }
+
+
+
 
 
 

@@ -18,6 +18,10 @@ export function useKeyboardShortcuts() {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
+      // Skip all shortcuts during gizmo drag (Blender modal-operator rule:
+      // the drag consumes keyboard input; shortcuts would cause side effects)
+      if ((window as any).__noise3d_gizmo?.state?.().dragging) return;
+
       const ov = useOverlayStore.getState();
 
       // '?' (Shift+/) opens the shortcut cheat sheet

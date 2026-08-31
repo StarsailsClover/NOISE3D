@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditorStore } from '@core/EditorStore';
+import { useOverlayStore } from '@core/OverlayStore';
+
+// GitHub@NDBlockConnect | BlockConnect@StarsailsClover
 
 export function StatusBar() {
   const sceneName = useEditorStore((s) => s.sceneName);
   const dirty = useEditorStore((s) => s.dirty);
   const gizmoMode = useEditorStore((s) => s.gizmoMode);
   const scene = useEditorStore((s) => s.scene);
+  const dragReadout = useOverlayStore((s) => s.dragReadout);
   const [fps, setFps] = useState(0);
   const [flying, setFlying] = useState(false);
   const frames = useRef(0);
@@ -42,7 +46,11 @@ export function StatusBar() {
 
   return (
     <div className="status-bar">
-      <span className="status-hints">{hints}</span>
+      {dragReadout ? (
+        <span className="transform-readout">{dragReadout}</span>
+      ) : (
+        <span className="status-hints">{hints}</span>
+      )}
       <span className="status-center">
         <span className="status-scene">{sceneName}</span>
         {dirty && <span className="status-dirty" title="Unsaved changes">•</span>}
